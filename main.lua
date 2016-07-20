@@ -10,6 +10,7 @@ require 'torch'
 require 'paths'
 require 'optim'
 require 'nn'
+require 'gnuplot'
 local DataLoader = require 'dataloader'
 local models = require 'models/init'
 local Trainer = require 'train'
@@ -44,12 +45,18 @@ end
 local startEpoch = checkpoint and checkpoint.epoch + 1 or opt.epochNumber
 local bestTop1 = math.huge
 local bestTop5 = math.huge
+local trainTop1s = checkpoint and checkpoint.trainTop1s or {}
+local testTop1s = checkpoint and checkpoint.testTop1s or {}
 for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
    local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
 
    -- Run model on validation set
    local testTop1, testTop5 = trainer:test(epoch, valLoader)
+
+   -- Save accuracy
+   trainTop1s[epoch] = trainTop1
+   testTop1s[epoch] = testTop1
 
    local bestModel = false
    if testTop1 < bestTop1 then
@@ -59,7 +66,8 @@ for epoch = startEpoch, opt.nEpochs do
       print(' * Best model ', testTop1, testTop5)
    end
 
-   checkpoints.save(epoch, model, trainer.optimState, bestModel, opt)
+   checkpoints.save(epoch, model, trainer.optimState, bestModel, trainTop1s, testTop1s, opt)
+   checkpoints.saveplot(trainTop1s, testTop1s, opt)
 end
 
 print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))

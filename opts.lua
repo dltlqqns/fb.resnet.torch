@@ -16,6 +16,7 @@ function M.parse(arg)
    cmd:text()
    cmd:text('Options:')
     ------------ General options --------------------
+   cmd:option('-expID',		 '',		 'Experiment ID')
    cmd:option('-data',       '',         'Path to dataset')
    cmd:option('-dataset',    'imagenet', 'Options: imagenet | cifar10')
    cmd:option('-manualSeed', 0,          'Manually set RNG seed')

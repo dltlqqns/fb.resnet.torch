@@ -25,7 +25,7 @@ function checkpoint.latest(opt)
    return latest, optimState
 end
 
-function checkpoint.save(epoch, model, optimState, isBestModel, opt)
+function checkpoint.save(epoch, model, optimState, isBestModel, trainTop1s, testTop1s, opt)
    local function saveModel(m)
       local modelFile = 'model_' .. epoch .. '.t7'
       local optimFile = 'optimState_' .. epoch .. '.t7'
@@ -36,6 +36,8 @@ function checkpoint.save(epoch, model, optimState, isBestModel, opt)
          epoch = epoch,
          modelFile = modelFile,
          optimFile = optimFile,
+		 trainTop1s = trainTop1s,
+		 testTop1s = testTop1s,
       })
 
       if isBestModel then
@@ -59,6 +61,15 @@ function checkpoint.save(epoch, model, optimState, isBestModel, opt)
       local models = require 'models/init'
       models.shareGradInput(model)
    end
+end
+
+function checkpoint.saveplot(trainY, testY, opt)
+   local h = gnuplot.pdffigure(paths.concat(opt.save,opt.expID .. '.pdf'))
+   gnuplot.plot({'train', torch.Tensor(trainY), '-'},{'val', torch.Tensor(testY), '-'})
+   gnuplot.grid(true)
+   gnuplot.xlabel('Iteration')
+   gnuplot.ylabel('Accuracy')
+   gnuplot.plotflush(h)
 end
 
 return checkpoint
