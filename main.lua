@@ -11,6 +11,7 @@ require 'paths'
 require 'optim'
 require 'nn'
 require 'gnuplot'
+require 'hdf5'
 local DataLoader = require 'dataloader'
 local models = require 'models/init'
 local Trainer = require 'train'
@@ -28,7 +29,7 @@ cutorch.manualSeedAll(opt.manualSeed)
 local checkpoint, optimState = checkpoints.latest(opt)
 
 -- Create model
-local model, criterion = models.setup(opt, checkpoint)
+--local model, criterion = models.setup(opt, checkpoint)
 
 -- Data loading
 local trainLoader, valLoader = DataLoader.create(opt)

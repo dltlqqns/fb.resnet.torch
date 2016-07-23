@@ -18,7 +18,7 @@ function M.parse(arg)
     ------------ General options --------------------
    cmd:option('-expID',		 '',		 'Experiment ID')
    cmd:option('-data',       '',         'Path to dataset')
-   cmd:option('-dataset',    'imagenet', 'Options: imagenet | cifar10')
+   cmd:option('-dataset',    'mpii', 'Options: mpii')
    cmd:option('-manualSeed', 0,          'Manually set RNG seed')
    cmd:option('-nGPU',       1,          'Number of GPUs to use by default')
    cmd:option('-backend',    'cudnn',    'Options: cudnn | cunn')
@@ -32,6 +32,8 @@ function M.parse(arg)
    cmd:option('-batchSize',       32,      'mini-batch size (1 = pure stochastic)')
    cmd:option('-testOnly',        'false', 'Run on validation set only')
    cmd:option('-tenCrop',         'false', 'Ten-crop testing')
+   cmd:option('-inputRes',        224,     'Input resolution')
+   cmd:option('-outputRes',       224,     'Output resolution')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    cmd:option('-resume',          'none',        'Resume from the latest checkpoint in this directory')
@@ -77,6 +79,9 @@ function M.parse(arg)
       -- Default shortcutType=A and nEpochs=164
       opt.shortcutType = opt.shortcutType == '' and 'A' or opt.shortcutType
       opt.nEpochs = opt.nEpochs == 0 and 164 or opt.nEpochs
+   elseif opt.dataset == 'mpii' then
+      opt.shorcutType = opt.shortcutType == '' and 'B' or opt.shortcutType
+      opt.nEpochs = opt.nEpochs == 0 and 90 or opt.nEpochs
    else
       cmd:error('unknown dataset: ' .. opt.dataset)
    end
