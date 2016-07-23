@@ -1,8 +1,15 @@
+ffi = require 'ffi'
+
 local M = {}
 
 function findImages()
-  local imagePath = torch.CharTensor()
+  local imagePaths = torch.CharTensor()
   
+  for i = 1, #paths do
+    ffi.copy(imagePaths[i].data(), paths[i])
+  end
+  
+  return imagePaths, labels
 end
 
 function M.exec(opt, cacheFile)
