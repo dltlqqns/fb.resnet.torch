@@ -125,7 +125,6 @@ local function createModel(opt)
    end
 
    local model = nn.Sequential()
-   --if opt.dataset == 'imagenet' then
       -- Configurations for ResNet:
       --  num. residual blocks, num features, residual block function
       local cfg = {
@@ -157,28 +156,7 @@ local function createModel(opt)
       --model:add(Avg(7, 7, 1, 1))
       --model:add(nn.View(nFeatures):setNumInputDims(3))
       --model:add(nn.Linear(nFeatures, 1000))
---[[
-   elseif opt.dataset == 'cifar10' then
-      -- Model type specifies number of layers for CIFAR-10 model
-      assert((depth - 2) % 6 == 0, 'depth should be one of 20, 32, 44, 56, 110, 1202')
-      local n = (depth - 2) / 6
-      iChannels = 16
-      print(' | ResNet-' .. depth .. ' CIFAR-10')
 
-      -- The ResNet CIFAR-10 model
-      model:add(Convolution(3,16,3,3,1,1,1,1))
-      model:add(layer(basicblock, 16, n, 1))
-      model:add(layer(basicblock, 32, n, 2))
-      model:add(layer(basicblock, 64, n, 2))
-      model:add(ShareGradInput(SBatchNorm(iChannels), 'last'))
-      model:add(ReLU(true))
-      model:add(Avg(8, 8, 1, 1))
-      model:add(nn.View(64):setNumInputDims(3))
-      model:add(nn.Linear(64, 10))
-   else
-      error('invalid dataset: ' .. opt.dataset)
-   end
---]]
 
    local function ConvInit(name)
       for k,v in pairs(model:findModules(name)) do

@@ -1,6 +1,6 @@
 local image = require 'image'
 local ffi = require 'ffi'
-local t = require 'datasets/transforms_ym.lua'
+local t = require 'datasets/transforms_ym'
 local M = {}
 local mpiiDataset = torch.class('resnet.mpiiDataset', M)
 
@@ -8,17 +8,26 @@ function mpiiDataset:__init(imageInfo, opt, split)
 	self.imageInfo = imageInfo[split]
   self.opt = opt
   self.split = split
-  self.nPart = imageInfo.parts:size(2)  -- ??
-  print(self.nPart) -- ??
+  self.nPart = imageInfo[split].parts:size(2)
 end
 
 function mpiiDataset:get(i)
   -- Generate sample
-  local input = self.loadImage(paths.concat(opt.datasetDir, 'images', ffi.string(self.imageInfo.imagePaths[i]:data())))
+  local path = paths.concat(self.opt.datasetDir, 'images', ffi.string(self.imageInfo.imagePaths[i]:data()))
+  local input = mpiiDataset:loadImage(path)
+  local center_yx = torch.zeros(2)
+  center_yx[1] = self.imageInfo.centers[i][2]
+  center_yx[2] = self.imageInfo.centers[i][1]
+  local joint_yx = torch.zeros(self.nPart,2)
+  joint_yx[{{},1}] = self.imageInfo.parts[i][{{},2}]
+  joint_yx[{{},2}] = self.imageInfo.parts[i][{{},1}]
   
   return {
     input = input,
-    joint = imageInfo.parts[i],
+    joint_yx = joint_yx,
+    center_yx = center_yx,
+    scale = self.imageInfo.scales[i],
+    visible = self.imageInfo.visibles[i],
   }
 end
 
@@ -36,14 +45,19 @@ function mpiiDataset:size()
 end
 
 function mpiiDataset:preprocess(sample)
-  
-  local w1 = math.ceil((sample.input:size(3) - size)/2)
-  local h1 = math.ceil((sample.input:size(2) - size)/2)
-  local input = image.crop(sample.input, w1,h1,w1+size,w2+size)
+  -- Crop input image
+  local input = t.crop(sample.input, sample.center_yx, sample.scale, self.opt.inputRes)
+  -- Generate heatmap
   local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
+  local tt = t.getTransformOrig2Crop(sample.center_yx, sample.scale, self.opt.outputRes)
   for iPart = 1, self.nPart do
-    heatmap[iPart] = drawGaussain(self.opt.outputRes, transform(), self.opt.sigma)
+    if sample.visible[iPart]~=0 then
+      local p = t.transform(sample.joint_yx[iPart], tt)
+      heatmap[iPart] = t.drawGaussian(self.opt.outputRes, p, self.opt.sigma)
+    end
   end
+  --input:add() ??
+  --input:div() ??
   
   --[[
   local image_cropped = t.crop(image, imageInfo.centers[i], imageInfo.scales[i], 0, self.opt.inputRes)
@@ -54,7 +68,7 @@ function mpiiDataset:preprocess(sample)
   local r = 
   
   local input = t.(sample.image_cropped, s,f,r)
-  local heatmap = generateHeatmap(sample.joint, s,f,r)
+  local heatmap = generateHeatmap(sample.joint_yx, s,f,r)
   --]]
   
   return {
