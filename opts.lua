@@ -34,6 +34,7 @@ function M.parse(arg)
    cmd:option('-tenCrop',         'false', 'Ten-crop testing')
    cmd:option('-inputRes',        224,     'Input resolution')
    cmd:option('-outputRes',       224,     'Output resolution')
+   cmd:option('-sigma',           10,      'Heatmap gaussian sigma')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    cmd:option('-resume',          'none',        'Resume from the latest checkpoint in this directory')

@@ -12,6 +12,7 @@ require 'optim'
 require 'nn'
 require 'gnuplot'
 require 'hdf5'
+
 local DataLoader = require 'dataloader'
 local models = require 'models/init'
 local Trainer = require 'train'

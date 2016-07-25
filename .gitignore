@@ -4,3 +4,4 @@ model_best.t7
 *checkpoints/
 save/
 *.png
+*~

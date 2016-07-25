@@ -1,6 +1,6 @@
 local image = require 'image'
 local ffi = require 'ffi'
-local t_shg = require 'datasets/transforms_ym.lua'
+local t = require 'datasets/transforms_ym.lua'
 local M = {}
 local mpiiDataset = torch.class('resnet.mpiiDataset', M)
 
@@ -14,16 +14,11 @@ end
 
 function mpiiDataset:get(i)
   -- Generate sample
-  local image = self.loadImage(paths.concat(opt.datasetDir, 'images', ffi.string(self.imageInfo.imagePaths[i]:data())))
-  local image_cropped = t_shg.crop(image, imageInfo.centers[i], imageInfo.scales[i], 0, self.opt.inputRes)
-  local joint = {}
-  for j = 1, self.nPart do
-    joint[j] = t_shg.transform(imageInfo.parts[i][j], imageInfo.centers[i], imageInfo.scales[i], 0, self.opt.outputRes) --?? indexing
-  end
+  local input = self.loadImage(paths.concat(opt.datasetDir, 'images', ffi.string(self.imageInfo.imagePaths[i]:data())))
   
   return {
-    input = image_cropped,
-    joint = joint,
+    input = input,
+    joint = imageInfo.parts[i],
   }
 end
 
@@ -41,6 +36,18 @@ function mpiiDataset:size()
 end
 
 function mpiiDataset:preprocess(sample)
+  
+  local w1 = math.ceil((sample.input:size(3) - size)/2)
+  local h1 = math.ceil((sample.input:size(2) - size)/2)
+  local input = image.crop(sample.input, w1,h1,w1+size,w2+size)
+  local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
+  for iPart = 1, self.nPart do
+    heatmap[iPart] = drawGaussain(self.opt.outputRes, transform(), self.opt.sigma)
+  end
+  
+  --[[
+  local image_cropped = t.crop(image, imageInfo.centers[i], imageInfo.scales[i], 0, self.opt.inputRes)
+  
   -- Data augmentation
   local s = 
   local f = 
@@ -48,6 +55,7 @@ function mpiiDataset:preprocess(sample)
   
   local input = t.(sample.image_cropped, s,f,r)
   local heatmap = generateHeatmap(sample.joint, s,f,r)
+  --]]
   
   return {
     input = input,
