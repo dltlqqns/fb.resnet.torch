@@ -63,14 +63,17 @@ function Trainer:train(epoch, dataloader)
 
       optim.sgd(feval, self.params, self.optimState)
 
+	  --[[
       local top1, top5 = self:computeScore(output, sample.target, 1)
       top1Sum = top1Sum + top1*batchSize
       top5Sum = top5Sum + top5*batchSize
+	  --]]
       lossSum = lossSum + loss*batchSize
       N = N + batchSize
 
-      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
-         epoch, n, trainSize, timer:time().real, dataTime, loss, top1, top5))
+      --print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
+      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f'):format(
+         epoch, n, trainSize, timer:time().real, dataTime, loss))
 
       -- check that the storage didn't get changed do to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
@@ -79,7 +82,8 @@ function Trainer:train(epoch, dataloader)
       dataTimer:reset()
    end
 
-   return top1Sum / N, top5Sum / N, lossSum / N
+   --return top1Sum / N, top5Sum / N, lossSum / N
+   return lossSum / N
 end
 
 function Trainer:test(epoch, dataloader)

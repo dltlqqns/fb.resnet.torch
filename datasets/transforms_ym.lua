@@ -2,26 +2,25 @@ require 'image'
 
 local M = {}
 
---[[
 function M.Compose(transforms)
-  return function(input)
+  return function(input, label)
     for _, transform in ipairs(transforms) do
-      input = transform(input)
+      input, label = transform(input, label)
     end
+    return input
   end
 end
 
 function M.ColorNormalize(meanstd)
-  return function(input)
+  return function(input, label)
     local output = input:clone()
-    for i = 1, input:size(1) do
+    for i = 1, 3 do
       output[i]:add(-meanstd.mean[i])
       output[i]:div(meanstd.std[i])
     end
-    return output
+    return output, label
   end
 end
---]]
 
 function M.getTransformOrig2Crop(center_yx, scale, res)
   -- original to cropped coordinate
@@ -52,8 +51,10 @@ function M.transform(pt_yx, t)
 end
 
 function M.padncrop(input, lt, br)
-  assert(input:nDimension()==3, 'wrong input format in function padncrop')
-  
+  -- lt <= . <= br
+    assert(input:nDimension()==3, 'wrong input format in function padncrop')
+    
+  -- Manipulate image
   -- Pad original image
   local padx = math.max(0, 1-lt[2], br[2]-input:size(3))
   local pady = math.max(0, 1-lt[1], br[1]-input:size(2))
@@ -63,7 +64,7 @@ function M.padncrop(input, lt, br)
   local lt_padded = {pady+lt[1], padx+lt[2]}
   local br_padded = {pady+br[1], padx+br[2]}
   local output = padded:sub(1,3,lt_padded[1],br_padded[1],lt_padded[2],br_padded[2]):clone()
-  
+    
   return output
 end
 
@@ -86,13 +87,23 @@ function M.drawGaussian(res, center_yx, sigma)
   assert(sigma-math.floor(sigma)==0,'sigma should be integer valued')
   local size = 6*sigma + 1
   local g = image.gaussian(size, 0.25)
-  lt_o = {math.max(center_yx[1] - 3*sigma,1), math.max(center_yx[2] - 3*sigma,1)}
-  br_o = {math.min(center_yx[1] + 3*sigma,res), math.min(center_yx[2] + 3*sigma,res)}
-  lt_g = {math.max(1,lt_o[1]-center_yx[1]+3*sigma+1), math.max(1,lt_o[2]-center_yx[2]+3*sigma+1)}
-  br_g = {math.min(size,br_o[1]-center_yx[1]+3*sigma+1), math.min(size,br_o[2]-center_yx[2]+3*sigma+1)}
+  local lt_o = {math.max(center_yx[1] - 3*sigma,1), math.max(center_yx[2] - 3*sigma,1)}
+  local br_o = {math.min(center_yx[1] + 3*sigma,res), math.min(center_yx[2] + 3*sigma,res)}
+  local lt_g = {math.max(1,lt_o[1]-center_yx[1]+3*sigma+1), math.max(1,lt_o[2]-center_yx[2]+3*sigma+1)}
+  local br_g = {math.min(size,br_o[1]-center_yx[1]+3*sigma+1), math.min(size,br_o[2]-center_yx[2]+3*sigma+1)}
   
+  --[[
+  print('hello')
+  print(br_o[1], lt_o[1], br_o[2], lt_o[2])
+  print(br_g[1], lt_g[1], br_g[2], lt_g[2])
+  print(br_o[1]-lt_o[1], br_o[2]-lt_o[2])
+  print(br_g[1]-lt_g[1], br_g[2]-lt_g[2])
+  --]]
+
   local output = torch.zeros(res,res)
-  output:sub(lt_o[1],br_o[1],lt_o[2],br_o[2]):copy(g:sub(lt_g[1],br_g[1],lt_g[2],br_g[2]))
+  if(br_o[1]-lt_o[1]>0 and br_o[2]-lt_o[2]>0) then
+    output:sub(lt_o[1],br_o[1],lt_o[2],br_o[2]):copy(g:sub(lt_g[1],br_g[1],lt_g[2],br_g[2]))
+  end
 
   return output
 end

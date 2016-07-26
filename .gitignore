@@ -5,3 +5,4 @@ model_best.t7
 save/
 *.png
 *~
+*.swp

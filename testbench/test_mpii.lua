@@ -15,7 +15,7 @@ local data = dataset:get(idx)
 image.display(data.input)
 
 -- Preprocess
-data_preprocessed = dataset:preprocess(data)
+data_preprocessed = dataset:preprocess()(data)
 image.display(data_preprocessed.input)
 local heatmap = torch.zeros(data_preprocessed.target:size(2),data_preprocessed.target:size(3))
 for iPart = 1, 16 do

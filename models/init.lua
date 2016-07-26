@@ -63,7 +63,8 @@ function M.setup(opt, checkpoint)
       end)
    end
 
-   local criterion = nn.CrossEntropyCriterion():cuda()
+   --local criterion = nn.CrossEntropyCriterion():cuda()
+   local criterion = nn.MSECriterion():cuda()
    return model, criterion
 end
 

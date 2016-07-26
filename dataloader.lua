@@ -48,6 +48,8 @@ function DataLoader:__init(dataset, opt, split)
    self.threads = threads
    self.__size = sizes[1][1]
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
+   self.nPart = opt.nPart
+   self.outputRes = opt.outputRes
 end
 
 function DataLoader:size()
@@ -58,6 +60,7 @@ function DataLoader:run()
    local threads = self.threads
    local size, batchSize = self.__size, self.batchSize
    local perm = torch.randperm(size)
+   local nPart, outputRes = self.nPart, self.outputRes
 
    local idx, sample = 1, nil
    local function enqueue()
@@ -67,10 +70,12 @@ function DataLoader:run()
             function(indices, nCrops)
                local sz = indices:size(1)
                local batch, imageSize
-               local target = torch.IntTensor(sz)
+               local target = torch.FloatTensor(sz, nPart, outputRes, outputRes)
                for i, idx in ipairs(indices:totable()) do
                   local sample = _G.dataset:get(idx)
-                  local input = _G.preprocess(sample.input)
+                  --local input = _G.preprocess(sample.input)
+                  sample = _G.preprocess(sample)
+                  local input = sample.input
                   if not batch then
                      imageSize = input:size():totable()
                      if nCrops > 1 then table.remove(imageSize, 1) end

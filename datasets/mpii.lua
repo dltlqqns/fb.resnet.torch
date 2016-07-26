@@ -44,37 +44,39 @@ function mpiiDataset:size()
   return self.imageInfo.centers:size(1)
 end
 
-function mpiiDataset:preprocess(sample)
-  -- Crop input image
-  local input = t.crop(sample.input, sample.center_yx, sample.scale, self.opt.inputRes)
-  -- Generate heatmap
-  local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
-  local tt = t.getTransformOrig2Crop(sample.center_yx, sample.scale, self.opt.outputRes)
-  for iPart = 1, self.nPart do
-    if sample.visible[iPart]~=0 then
-      local p = t.transform(sample.joint_yx[iPart], tt)
-      heatmap[iPart] = t.drawGaussian(self.opt.outputRes, p, self.opt.sigma)
+function mpiiDataset:preprocess()
+  -- TODO: color normalize
+  -- TODO: data augmentation
+  return function(sample)
+    -- Crop input image
+    local input = t.crop(sample.input, sample.center_yx, sample.scale, self.opt.inputRes)
+    -- Generate heatmap
+    local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
+    local tt = t.getTransformOrig2Crop(sample.center_yx, sample.scale, self.opt.outputRes)
+    for iPart = 1, self.nPart do
+      if sample.visible[iPart]~=0 then
+        local p = t.transform(sample.joint_yx[iPart], tt)
+        heatmap[iPart] = t.drawGaussian(self.opt.outputRes, p, self.opt.sigma)
+      end
     end
+    --input:add() ??
+    --input:div() ??
+    
+    --[[
+    -- Data augmentation
+    local s = 
+    local f = 
+    local r = 
+    
+    local input = t.(sample.image_cropped, s,f,r)
+    local heatmap = generateHeatmap(sample.joint_yx, s,f,r)
+    --]]
+    
+    return {
+      input = input,
+      target = heatmap,
+    }
   end
-  --input:add() ??
-  --input:div() ??
-  
-  --[[
-  local image_cropped = t.crop(image, imageInfo.centers[i], imageInfo.scales[i], 0, self.opt.inputRes)
-  
-  -- Data augmentation
-  local s = 
-  local f = 
-  local r = 
-  
-  local input = t.(sample.image_cropped, s,f,r)
-  local heatmap = generateHeatmap(sample.joint_yx, s,f,r)
-  --]]
-  
-  return {
-    input = input,
-    target = heatmap,
-  }
 end
 
 return M.mpiiDataset

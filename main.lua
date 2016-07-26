@@ -30,7 +30,7 @@ cutorch.manualSeedAll(opt.manualSeed)
 local checkpoint, optimState = checkpoints.latest(opt)
 
 -- Create model
---local model, criterion = models.setup(opt, checkpoint)
+local model, criterion = models.setup(opt, checkpoint)
 
 -- Data loading
 local trainLoader, valLoader = DataLoader.create(opt)
@@ -51,8 +51,10 @@ local trainTop1s = checkpoint and checkpoint.trainTop1s or {}
 local testTop1s = checkpoint and checkpoint.testTop1s or {}
 for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
-   local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
+   local trainLoss = trainer:train(epoch, trainLoader)
+   --local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
 
+   --[[
    -- Run model on validation set
    local testTop1, testTop5 = trainer:test(epoch, valLoader)
 
@@ -70,6 +72,7 @@ for epoch = startEpoch, opt.nEpochs do
 
    checkpoints.save(epoch, model, trainer.optimState, bestModel, trainTop1s, testTop1s, opt)
    checkpoints.saveplot(trainTop1s, testTop1s, opt)
+   --]]
 end
 
 print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))
