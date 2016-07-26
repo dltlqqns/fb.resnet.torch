@@ -34,11 +34,15 @@ local function createModel(opt)
             :add(Convolution(nInputPlane, nOutputPlane, 1, 1, stride, stride))
       elseif nInputPlane ~= nOutputPlane then
          -- Strided, zero-padded identity shortcut
+		 --[[
          return nn.Sequential()
             :add(nn.SpatialAveragePooling(1, 1, stride, stride))
             :add(nn.Concat(2)
                :add(nn.Identity())
                :add(nn.MulConstant(0)))
+		 --]]
+		 return nn.Sequential()
+			:add(Convolution(nInputPlane, nOutputPlane, 1, 1, stride, stride))
       else
          return nn.Identity()
       end
