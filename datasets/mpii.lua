@@ -52,11 +52,12 @@ function mpiiDataset:preprocess()
     local input = t.crop(sample.input, sample.center_yx, sample.scale, self.opt.inputRes)
     -- Generate heatmap
     local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
+    local parts_hm = -torch.ones(self.nPart, 2) -- yx order
     local tt = t.getTransformOrig2Crop(sample.center_yx, sample.scale, self.opt.outputRes)
     for iPart = 1, self.nPart do
       if sample.visible[iPart]~=0 then
-        local p = t.transform(sample.joint_yx[iPart], tt)
-        heatmap[iPart] = t.drawGaussian(self.opt.outputRes, p, self.opt.sigma)
+        parts_hm[iPart] = t.transform(sample.joint_yx[iPart], tt)
+        heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma)
       end
     end
     --input:add() ??
@@ -73,8 +74,11 @@ function mpiiDataset:preprocess()
     --]]
     
     return {
+      -- for training
       input = input,
       target = heatmap,
+      -- for evaluation
+      parts_hm = parts_hm,
     }
   end
 end

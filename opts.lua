@@ -33,7 +33,7 @@ function M.parse(arg)
    cmd:option('-testOnly',        'false', 'Run on validation set only')
    cmd:option('-tenCrop',         'false', 'Ten-crop testing')
    cmd:option('-inputRes',       256,     'Input resolution')
-   cmd:option('-outputRes',       8,     'Output resolution')
+   cmd:option('-outputRes',       31,     'Output resolution')
    cmd:option('-sigma',           1,      'Heatmap gaussian sigma')
    cmd:option('-nPart',           16,     'Number of body parts')
    ------------- Checkpointing options ---------------

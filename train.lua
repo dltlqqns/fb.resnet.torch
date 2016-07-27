@@ -10,6 +10,7 @@
 --
 
 local optim = require 'optim'
+local eval = require 'eval'
 
 local M = {}
 local Trainer = torch.class('resnet.Trainer', M)
@@ -41,7 +42,8 @@ function Trainer:train(epoch, dataloader)
    end
 
    local trainSize = dataloader:size()
-   local top1Sum, top5Sum, lossSum = 0.0, 0.0, 0.0
+   --local top1Sum, top5Sum, lossSum = 0.0, 0.0, 0.0
+   local lossSum, accSum, distSum = 0.0, 0.0, 0.0
    local N = 0
 
    print('=> Training epoch # ' .. epoch)
@@ -56,6 +58,7 @@ function Trainer:train(epoch, dataloader)
       local output = self.model:forward(self.input):float()
       local batchSize = output:size(1)
       local loss = self.criterion:forward(self.model.output, self.target)
+      local acc, dist = eval.getPerformance(output, sample)
 
       self.model:zeroGradParameters()
       self.criterion:backward(self.model.output, self.target)
@@ -69,11 +72,13 @@ function Trainer:train(epoch, dataloader)
       top5Sum = top5Sum + top5*batchSize
 	  --]]
       lossSum = lossSum + loss*batchSize
+      accSum = accSum + acc*batchSize
+      distSum = distSum + dist*batchSize
       N = N + batchSize
 
       --print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
-      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f'):format(
-         epoch, n, trainSize, timer:time().real, dataTime, loss))
+      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Loss %1.4f  Acc %1.4f  Dist %1.4f'):format(
+         epoch, n, trainSize, timer:time().real, dataTime, loss, acc, dist))
 
       -- check that the storage didn't get changed do to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
@@ -127,6 +132,29 @@ function Trainer:test(epoch, dataloader)
    return top1Sum / N, top5Sum / N
 end
 
+--[[ Original code
+function Trainer:computeAcc(output, target, nCrops)
+  if nCrops > 1 then
+    error('Under construction, in function computeAcc')
+  end
+  
+  --Compute accuracy
+  local nSample = target:size(1)
+  local nPart = target:size(2)
+  assert(nPart==16, 'nPart is wrong')
+  for iSample = 1, nSample do
+    for iPart = 1, nPart do
+      -- Estimate final solution
+      -- Get distance from ground truth
+      -- Get accuracy
+      local dist
+      dist[iPart] = torch.norm()
+    end
+  end
+  
+  return acc
+end
+
 function Trainer:computeScore(output, target, nCrops)
    if nCrops > 1 then
       -- Sum over crops
@@ -153,6 +181,7 @@ function Trainer:computeScore(output, target, nCrops)
 
    return top1 * 100, top5 * 100
 end
+--]]
 
 function Trainer:copyInputs(sample)
    -- Copies the input to a CUDA tensor, if using 1 GPU, or to pinned memory,

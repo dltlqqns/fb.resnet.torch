@@ -60,7 +60,7 @@ local function createModel(opt)
 
    -- The basic residual layer block for 18 and 34 layer network, and the
    -- CIFAR networks
-   local function basicblock(n, stride, type)
+   local function basicblock(n, stride, type, dilation)
       local nInputPlane = iChannels
       iChannels = n
 
@@ -73,20 +73,32 @@ local function createModel(opt)
          s:add(SBatchNorm(nInputPlane))
          s:add(ReLU(true))
       end
-      s:add(Convolution(nInputPlane,n,3,3,stride,stride,1,1))
+      if dilation then
+        s:add(nn.SpatialDilatedConvolution(nInputPlane,n,3,3,1,1,stride,stride,stride,stride))
+      else
+        s:add(Convolution(nInputPlane,n,3,3,stride,stride,1,1))
+      end
       s:add(SBatchNorm(n))
       s:add(ReLU(true))
       s:add(Convolution(n,n,3,3,1,1,1,1))
 
-      return block
-         :add(nn.ConcatTable()
+      if dilation then
+        return block
+          :add(nn.ConcatTable()
+            :add(s)
+            :add(shortcut(nInputPlane, n, 1)))
+          :add(nn.CAddTable(true))
+      else
+        return block
+          :add(nn.ConcatTable()
             :add(s)
             :add(shortcut(nInputPlane, n, stride)))
-         :add(nn.CAddTable(true))
+          :add(nn.CAddTable(true))
+      end    
    end
 
    -- The bottleneck residual layer for 50, 101, and 152 layer networks
-   local function bottleneck(n, stride, type)
+   local function bottleneck(n, stride, type, dilation)
       local nInputPlane = iChannels
       iChannels = n * 4
 
@@ -102,18 +114,30 @@ local function createModel(opt)
       s:add(Convolution(nInputPlane,n,1,1,1,1,0,0))
       s:add(SBatchNorm(n))
       s:add(ReLU(true))
-      s:add(Convolution(n,n,3,3,stride,stride,1,1))
+      if dilation then
+        s:add(nn.SpatialDilatedConvolution(n,n,3,3,1,1,stride,stride,stride,stride))
+      else
+        s:add(Convolution(n,n,3,3,stride,stride,1,1))
+      end
       s:add(SBatchNorm(n))
       s:add(ReLU(true))
       s:add(Convolution(n,n*4,1,1,1,1,0,0))
 
-      return block
-         :add(nn.ConcatTable()
+      if dilation then
+        return block
+          :add(nn.ConcatTable()
+            :add(s)
+            :add(shortcut(nInputPlane, n * 4, 1)))
+          :add(nn.CAddTable(true))
+      else
+        return block
+          :add(nn.ConcatTable()
             :add(s)
             :add(shortcut(nInputPlane, n * 4, stride)))
-         :add(nn.CAddTable(true))
+          :add(nn.CAddTable(true))
+      end
    end
-
+   
    -- Creates count residual blocks with specified number of features
    local function layer(block, features, count, stride, type)
       local s = nn.Sequential()
@@ -121,7 +145,7 @@ local function createModel(opt)
         return s
       end
       s:add(block(features, stride,
-                  type == 'first' and 'no_preact' or 'both_preact'))
+                  type == 'first' and 'no_preact' or 'both_preact', type=='dilation'))
       for i=2,count do
          s:add(block(features, 1))
       end
@@ -154,10 +178,17 @@ local function createModel(opt)
       model:add(layer(block, 128, def[2], 2))
       model:add(layer(block, 256, def[3], 2))
       --model:add(layer(block, 512, def[4], 2))
-      model:add(layer(block, 512, def[4], 2))
+      model:add(layer(block, 512, def[4], 2, 'dilation'))
       model:add(ShareGradInput(SBatchNorm(iChannels), 'last'))
       model:add(ReLU(true))
-	  model:add(Convolution(nFeatures,16,1,1,1,1,0,0))
+      if true then -- deconvolution
+        model:add(cudnn.SpatialFullConvolution(nFeatures,16,3,3,2,2,1,1))
+        model:add(SBatchNorm(16))
+        model:add(ReLU(true))
+        model:add(Convolution(16,16,1,1,1,1,0,0))
+      else
+        model:add(Convolution(nFeatures,16,1,1,1,1,0,0))
+      end
       --model:add(Avg(7, 7, 1, 1))
       --model:add(nn.View(nFeatures):setNumInputDims(3))
       --model:add(nn.Linear(nFeatures, 1000))
