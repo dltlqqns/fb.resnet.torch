@@ -72,6 +72,7 @@ for epoch = startEpoch, opt.nEpochs do
 
    checkpoints.save(epoch, model, trainer.optimState, bestModel, trainTop1s, testTop1s, opt)
    checkpoints.saveplot(trainTop1s, testTop1s, opt)
+   checkpoints.saveFigure()
    --]]
 end
 
