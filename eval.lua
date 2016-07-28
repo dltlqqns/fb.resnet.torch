@@ -1,82 +1,68 @@
-local t = require 'datasets/transforms_ym'
 local M = {}
 
 -- Pose estimation function from heatmap to joint positions on the heatmap coord
-function M.getPred_hm(hm)
+function M.getPred_hm(hm, type)
   -- hm: (nSample x nPart x H x W) heatmaps
-  -- preds_hm: (nSample x nPart x 2). yx order
+  -- pred_hm: (nSample x nPart x 2). yx order
+  -- visible: (nSample x nPart)
   assert(hm:nDimension()==4, 'wrong input format in function getPred')
-  local max, idx = torch.max(hm:view(hm:size(1),hm:size(2),hm:size(3)*hm:size(4)),3)
-  local preds_hm = torch.repeatTensor(idx,1,1,2):float()
-  preds_hm[{{},{},1}]:add(-1):div(hm:size(4)):floor():add(1)
-  preds_hm[{{},{},2}]:apply(function(x) return (x-1)%hm:size(4) end)
-  return preds_hm
+  local preds_hm
+  local pred_visible
+  if type=='max' then
+    local max, idx = torch.max(hm:view(hm:size(1),hm:size(2),hm:size(3)*hm:size(4)),3)
+    preds_hm = torch.repeatTensor(idx,1,1,2):float()
+    preds_hm[{{},{},1}]:add(-1):div(hm:size(4)):floor():add(1)
+    preds_hm[{{},{},2}]:apply(function(x) return (x-1)%hm:size(4)+1 end)
+    pred_visible = torch.ByteTensor(hm:size(1), hm:size(2)):fill(1)
+  end
+  return preds_hm, pred_visible
 end
 
--- Return accuracy of parts for one sample
-function M.detected_hm(pred_hm, target_hm, thres, dist)
-  -- pred_hm: (nPart x 2). yx order. pred_hm = -1 for invisible parts
-  -- target_hm : (nPart x 2). yx order. target_hm = -1 for invisible parts
-  -- dist: (nPart x 1). dist = -1 for invisible parts
-  assert(pred_hm:nDimension()==2 and target_hm:nDimension()==2, 'wrong input format')
-  
-  local nPart = pred_hm:size(1)
-  local iRSHO = 
-  local iLHIP = 
-  
-  -- Get distance
-  dist = M.getDistance_hm(pred_hm, target_hm)
-  
-  -- Get reference distance (rsho to lhip)
-  local refdist = torch.norm(target_hm[iRSHO] - target_hm[iLHIP])
-  -- Get accuracy
-  -- take care of invisible parts!!
-  local acc = torch.zeros(nPart)
-  
+function M.getAccuracy(normalized_dists, pred_invisible, invisible, thres, type)
+  local acc
+  if type=='normal' then
+    local visible = 1 - invisible
+    local dets = normalized_dists:lt(thres):cmul(visible)
+    local nVisibles = visible:sum(1)
+    local valid = 1-nVisibles:eq(0) -- to address dividing by 0
+    acc = dets:float():sum(1)[valid]:cdiv(nVisibles[valid]:float()):mean()
+  elseif type== 'occlusion-aware' then
+    error('under construction')
+  else
+    error('wrong type')
+  end
   return acc
 end
 
--- Return distance from GT of parts for one sample
-function M.getDistance_hm(pred_hm, target_hm)
-  -- pred_hm: (nPart x 2). yx order
-  -- target_hm : (nPart x 2). yx order
-  -- target_hm = -1 for invisible parts. corresponding distance = -1
-  -- dist: (nPart x 1)
-  assert(pred_hm:nDimension()==2 and target_hm:nDimension()==2, 'wrong input format')
-  local nPart = pred_hm:size(1)
-  local invisible = target_hm:lt(0):sum(2):squeeze()
-  local dist = -torch.ones(nPart, 2)
-  for iPart = 1, nPart do
-    if not invisible[iPart] then
-      dist[iPart] = torch.norm(pred_hm[iPart] - target_hm[iPart])
-    end
-  end
-  print(dist)
-  
-  return dist
-end
-
 -- Return average accuracy and distance on the heatmap coord over all samples
-function M.getPerformance(output, sample)
+function M.getPerformance(output, sample, dataset)
   assert(output:nDimension()==4, 'wrong input format in function getPerformance')
   local nSample = output:size(1)
   local nPart = output:size(2)
   local thres = 0.5 -- pckh
-  
-  -- Get prediction on the heatmap coord
-  local preds_hm = M.getPred_hm(output)
-  -- Get GT on the heatmap coord
-  local targets_hm = sample.parts_hm
-  
-  -- Get distance and accuracy
-  local dists = torch.zeros(nSample, nPart)
-  local dets = torch.zeros(nSample, nPart)
-  for iSample = 1, nSample do
-    dets[iSample], dists[iSample] = M.detected_hm(preds_hm[iSample], targets_hm[iSample], thres)
+  local iRSHO, iLHIP
+  if dataset=='mpii' then
+    iRSHO, iLHIP = 1,3
+  else
+    --error('under construction')
+    iRSHO, iLHIP = 1,2
   end
   
+  -- Get prediction on the heatmap coord
+  local preds_hm, pred_invisible = M.getPred_hm(output, 'max')
+  -- Get GT on the heatmap coord
+  local targets_hm = sample.parts_hm:float()
+  local invisible = targets_hm:eq(-1):sum(3)
+  
+  -- Get accuracy
+  local dists = (preds_hm - targets_hm):pow(2):sum(3):sqrt()
+  local dists_ref = (targets_hm[{{},{iRSHO},{}}] - targets_hm[{{},{iLHIP},{}}]):pow(2):sum(3):sqrt()
+  dists_ref[dists_ref:eq(0)] = 1 -- prevent to divide by 0
+  local normalized_dists = dists:cdiv(dists_ref:repeatTensor(1,dists:size(2),1))
+  local acc = M.getAccuracy(dists, pred_invisible, invisible, thres, 'normal')
+  
   -- Average over both samples and parts
-  return dets:float():mean(), dists:float():mean()
+  return acc
 end
 
 function M.drawPCK(preds_orig, target_orig)
