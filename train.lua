@@ -58,7 +58,7 @@ function Trainer:train(epoch, dataloader)
       local output = self.model:forward(self.input):float()
       local batchSize = output:size(1)
       local loss = self.criterion:forward(self.model.output, self.target)
-      local acc, dist = eval.getPerformance(output, sample)
+      local acc = eval.getPerformance(output, sample)
 
       self.model:zeroGradParameters()
       self.criterion:backward(self.model.output, self.target)
@@ -73,12 +73,11 @@ function Trainer:train(epoch, dataloader)
 	  --]]
       lossSum = lossSum + loss*batchSize
       accSum = accSum + acc*batchSize
-      distSum = distSum + dist*batchSize
       N = N + batchSize
 
       --print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
-      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Loss %1.4f  Acc %1.4f  Dist %1.4f'):format(
-         epoch, n, trainSize, timer:time().real, dataTime, loss, acc, dist))
+      print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Loss %1.4f  Acc %1.4f'):format(
+         epoch, n, trainSize, timer:time().real, dataTime, loss, acc))
 
       -- check that the storage didn't get changed do to an unfortunate getParameters call
       assert(self.params:storage() == self.model:parameters()[1]:storage())
@@ -88,7 +87,7 @@ function Trainer:train(epoch, dataloader)
    end
 
    --return top1Sum / N, top5Sum / N, lossSum / N
-   return lossSum / N
+   return accSum / N, lossSum / N
 end
 
 function Trainer:test(epoch, dataloader)

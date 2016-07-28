@@ -55,8 +55,28 @@ function M.exec(opt, cacheFile)
       },
     }
   
+  local info_small = {
+      basedir = opt.datasplitDir,
+      train = {
+        imagePaths = trainImagePaths:narrow(1,1,1000),
+        centers = trainCenters:narrow(1,1,1000),
+        scales = trainScales:narrow(1,1,1000),
+        parts = trainParts:narrow(1,1,1000),
+        visibles = trainVisibles:narrow(1,1,1000),
+      },
+      val = {
+        imagePaths = valImagePaths,
+        centers = valCenters,
+        scales = valScales,
+        parts = valParts,
+        visibles = valVisibles,
+      },
+    }
+  
   print("Saving list of images to " .. cacheFile)
   torch.save(cacheFile, info)
+  local _,_,filename_without_extension = string.find(cacheFile, "^(.*)%.[^%.]*$")
+  torch.save(filename_without_extension .. '_small.t7', info_small)
   return info
 end
 

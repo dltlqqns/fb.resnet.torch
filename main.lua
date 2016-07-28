@@ -51,7 +51,7 @@ local trainTop1s = checkpoint and checkpoint.trainTop1s or {}
 local testTop1s = checkpoint and checkpoint.testTop1s or {}
 for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
-   local trainLoss = trainer:train(epoch, trainLoader)
+   local trainAcc, trainLoss = trainer:train(epoch, trainLoader)
    --local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
 
    --[[
@@ -71,9 +71,9 @@ for epoch = startEpoch, opt.nEpochs do
    end
 
    checkpoints.save(epoch, model, trainer.optimState, bestModel, trainTop1s, testTop1s, opt)
-   checkpoints.saveplot(trainTop1s, testTop1s, opt)
-   checkpoints.saveFigure()
    --]]
+   checkpoints.saveplot(trainAcc, testAcc, opt, 'acc')
+   checkpoints.saveplot(trainLoss, testLoss, opt, 'loss')
 end
 
 print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))

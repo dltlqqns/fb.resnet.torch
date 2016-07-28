@@ -36,6 +36,7 @@ function M.parse(arg)
    cmd:option('-outputRes',       31,     'Output resolution')
    cmd:option('-sigma',           1,      'Heatmap gaussian sigma')
    cmd:option('-nPart',           16,     'Number of body parts')
+   cmd:option('-small',           'false', 'if small dataset test')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    cmd:option('-resume',          'none',        'Resume from the latest checkpoint in this directory')

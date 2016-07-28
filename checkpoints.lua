@@ -63,13 +63,18 @@ function checkpoint.save(epoch, model, optimState, isBestModel, trainTop1s, test
    end
 end
 
-function checkpoint.saveplot(trainY, testY, opt)
-   local h = gnuplot.pdffigure(paths.concat(opt.save,opt.expID .. '.pdf'))
+function checkpoint.saveplot(trainY, testY, opt, id)
+   local h = gnuplot.pdffigure(paths.concat(opt.save,opt.expID .. id .. '.pdf'))
    gnuplot.plot({'train', torch.Tensor(trainY), '-'},{'val', torch.Tensor(testY), '-'})
    gnuplot.grid(true)
    gnuplot.xlabel('Iteration')
    gnuplot.ylabel('Accuracy')
    gnuplot.plotflush(h)
+end
+
+function checkpoint.saveHeatmap(hm)
+  local im = drawOutput(torch.Tensor(3,hm:size(1),hm:size(2)),hm)
+  return im
 end
 
 return checkpoint

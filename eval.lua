@@ -25,6 +25,13 @@ function M.getAccuracy(normalized_dists, pred_invisible, invisible, thres, type)
     local dets = normalized_dists:lt(thres):cmul(visible)
     local nVisibles = visible:sum(1)
     local valid = 1-nVisibles:eq(0) -- to address dividing by 0
+    --[[
+    print(dets:float():sum(1)[valid])
+    print(invisible)
+    print(visible)
+    print(nVisibles)
+    print(nVisibles[valid]:float())
+    --]]
     acc = dets:float():sum(1)[valid]:cdiv(nVisibles[valid]:float()):mean()
   elseif type== 'occlusion-aware' then
     error('under construction')
@@ -42,7 +49,7 @@ function M.getPerformance(output, sample, dataset)
   local thres = 0.5 -- pckh
   local iRSHO, iLHIP
   if dataset=='mpii' then
-    iRSHO, iLHIP = 1,3
+    iRSHO, iLHIP = 1,3 -- ??
   else
     --error('under construction')
     iRSHO, iLHIP = 1,2
