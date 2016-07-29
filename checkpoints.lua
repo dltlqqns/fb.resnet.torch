@@ -71,7 +71,7 @@ function checkpoint.saveplot(trainY, testY, opt, id)
    gnuplot.plot({'train', torch.Tensor(trainY), '-'},{'val', torch.Tensor(testY), '-'})
    gnuplot.grid(true)
    gnuplot.xlabel('Iteration')
-   gnuplot.ylabel('Accuracy')
+   gnuplot.ylabel(id)
    gnuplot.plotflush(h1)
    
    -- log scale
@@ -79,7 +79,7 @@ function checkpoint.saveplot(trainY, testY, opt, id)
    gnuplot.plot({'train', torch.log(torch.Tensor(trainY)), '-'},{'val', torch.log(torch.Tensor(testY)), '-'})
    gnuplot.grid(true)
    gnuplot.xlabel('Iteration')
-   gnuplot.ylabel('Accuracy (log-scale)')
+   gnuplot.ylabel(id .. ' (log-scale)')
    gnuplot.plotflush(h2)
 end
 

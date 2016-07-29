@@ -13,6 +13,7 @@
 require 'nn'
 require 'cunn'
 require 'cudnn'
+require 'MSEpartialCriterion'
 
 local M = {}
 
@@ -64,7 +65,8 @@ function M.setup(opt, checkpoint)
    end
 
    --local criterion = nn.CrossEntropyCriterion():cuda()
-   local criterion = nn.MSECriterion():cuda()
+   --local criterion = nn.MSECriterion():cuda()
+   local criterion = nn.MSEpartialCriterion():cuda()
    return model, criterion
 end
 

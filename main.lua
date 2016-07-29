@@ -72,8 +72,8 @@ for epoch = startEpoch, opt.nEpochs do
    
   checkpoints.save(epoch, model, trainer.optimState, bestModel, trainLosses, testLosses, trainAccs, testAccs, opt)
   if epoch >= 2 then
-    checkpoints.saveplot(trainLosses, testLosses, opt, 'loss')
-    checkpoints.saveplot(trainAccs, testAccs, opt, 'acc')
+    checkpoints.saveplot(trainLosses, testLosses, opt, 'Loss')
+    checkpoints.saveplot(trainAccs, testAccs, opt, 'Accuracy')
   end
 end
 
