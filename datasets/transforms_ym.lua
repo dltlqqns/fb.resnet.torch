@@ -3,24 +3,57 @@ require 'image'
 local M = {}
 
 function M.Compose(transforms)
-  return function(input, label)
+  return function(sample)
+    -- Jitter input and labels
+    local input, joint_yx = sample.input, sample.joint_yx
     for _, transform in ipairs(transforms) do
-      input, label = transform(input, label)
+      input, joint_yx = transform(input, joint_yx)
     end
-    return input
+    
+    return {
+      input = input,
+      parts_hm = joint_yx,
+    }
   end
 end
 
 function M.ColorNormalize(meanstd)
-  return function(input, label)
+  return function(input, joint_yx)
     local output = input:clone()
     for i = 1, 3 do
       output[i]:add(-meanstd.mean[i])
       output[i]:div(meanstd.std[i])
     end
-    return output, label
+    return output, joint_yx
   end
 end
+
+-- Random crop form larger image with optional zero padding
+function M.RandomCrop(size, padding)
+   padding = padding or 0
+
+   return function(input, joint_yx)
+      if padding > 0 then
+         local temp = input.new(3, input:size(2) + 2*padding, input:size(3) + 2*padding)
+         temp:zero()
+            :narrow(2, padding+1, input:size(2))
+            :narrow(3, padding+1, input:size(3))
+            :copy(input)
+         input = temp
+      end
+
+      local w, h = input:size(3), input:size(2)
+      if w == size and h == size then
+         return input
+      end
+
+      local x1, y1 = torch.random(0, w - size), torch.random(0, h - size)
+      local out = image.crop(input, x1, y1, x1 + size, y1 + size)
+      assert(out:size(2) == size and out:size(3) == size, 'wrong crop size')
+      return out, joint_yx
+   end
+end
+
 
 function M.getTransformOrig2Crop(center_yx, scale, res)
   -- original to cropped coordinate

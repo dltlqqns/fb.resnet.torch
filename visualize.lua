@@ -31,12 +31,13 @@ function M.drawOutput(input, hms)
 	--assert(hms:size(1)==16,'wrong input in function drawOutput')
 
     local colorHms = {}
-    local inp64 = image.scale(input,64):mul(.3)
+    local sz = hms:size(3)
+    local inp = image.scale(input,sz):mul(.3)
     for i = 1,hms:size(1) do 
         colorHms[i] = M.colorHM(hms[i])
-        colorHms[i]:mul(.7):add(inp64)
+        colorHms[i]:mul(.7):add(inp)
     end
-    local totalHm = M.compileImages(colorHms, 4, 4, 64)
+    local totalHm = M.compileImages(colorHms, 4, 4, sz)
     local im = image.scale(totalHm,756)
     return im
 end

@@ -45,42 +45,36 @@ if opt.testOnly then
 end
 
 local startEpoch = checkpoint and checkpoint.epoch + 1 or opt.epochNumber
-local bestTop1 = math.huge
-local bestTop5 = math.huge
-local trainAccs = checkpoint and checkpoint.trainAccs or {}
+local bestAcc = -math.huge
 local trainLosses = checkpoint and checkpoint.trainLosses or {}
-local testAccs = checkpoint and checkpoint.testAccs or {}
+local trainAccs = checkpoint and checkpoint.trainAccs or {}
 local testLosses = checkpoint and checkpoint.testLosses or {}
+local testAccs = checkpoint and checkpoint.testAccs or {}
 for epoch = startEpoch, opt.nEpochs do
    -- Train for a single epoch
-   trainLoss, trainAcc = trainer:train(epoch, trainLoader)
-   --local trainTop1, trainTop5, trainLoss = trainer:train(epoch, trainLoader)
+   local trainLoss, trainAcc = trainer:train(epoch, trainLoader)
 
-   --[[
    -- Run model on validation set
-   local testTop1, testTop5 = trainer:test(epoch, valLoader)
+   local testLoss, testAcc = trainer:test(epoch, valLoader)
 
    -- Save accuracy
-   trainTop1s[epoch] = trainTop1
-   testTop1s[epoch] = testTop1
-
-   local bestModel = false
-   if testTop1 < bestTop1 then
-      bestModel = true
-      bestTop1 = testTop1
-      bestTop5 = testTop5
-      print(' * Best model ', testTop1, testTop5)
-   end
-   --]]
-   --adhoc
    trainLosses[epoch] = trainLoss
    trainAccs[epoch] = trainAcc
+   testLosses[epoch] = testLoss
+   testAccs[epoch] = testAcc
+
+   local bestModel = false
+   if testAcc > bestAcc then
+      bestModel = true
+      bestAcc = testAcc
+      print(' * Best model ', testAcc)
+   end
    
-  checkpoints.save(epoch, model, trainer.optimState, bestModel, trainLosses, trainLosses, trainAccs, trainAccs, opt)
+  checkpoints.save(epoch, model, trainer.optimState, bestModel, trainLosses, testLosses, trainAccs, testAccs, opt)
   if epoch >= 2 then
-    checkpoints.saveplot(trainLosses, trainLosses, opt, 'loss')
-    checkpoints.saveplot(trainAccs, trainAccs, opt, 'acc')
+    checkpoints.saveplot(trainLosses, testLosses, opt, 'loss')
+    checkpoints.saveplot(trainAccs, testAccs, opt, 'acc')
   end
 end
 
-print(string.format(' * Finished top1: %6.3f  top5: %6.3f', bestTop1, bestTop5))
+print(string.format(' * Finished acc: %6.3f', bestAcc))

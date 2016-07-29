@@ -11,6 +11,7 @@
 
 local optim = require 'optim'
 local eval = require 'eval'
+local visualize = require 'visualize'
 
 local M = {}
 local Trainer = torch.class('resnet.Trainer', M)
@@ -66,16 +67,20 @@ function Trainer:train(epoch, dataloader)
 
       optim.sgd(feval, self.params, self.optimState)
 
-	  --[[
-      local top1, top5 = self:computeScore(output, sample.target, 1)
-      top1Sum = top1Sum + top1*batchSize
-      top5Sum = top5Sum + top5*batchSize
-	  --]]
       lossSum = lossSum + loss*batchSize
       accSum = accSum + acc*batchSize
       N = N + batchSize
 
-      --print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Err %1.4f  top1 %7.3f  top5 %7.3f'):format(
+      -- draw heatmap
+      if n == 1 then
+        local hm = visualize.drawOutput(sample.input[1], output[1])
+        --image.display(hm)
+        image.save('checkpoints/train_hm.png', hm)
+        --local hm_gt = visualize.drawOutput(sample.input[1], sample.target[1])
+        --image.display(hm_gt)
+      end
+      
+      --
       print((' | Epoch: [%d][%d/%d]    Time %.3f  Data %.3f  Loss %1.4f  Acc %1.4f'):format(
          epoch, n, trainSize, timer:time().real, dataTime, loss, acc))
 
@@ -86,7 +91,6 @@ function Trainer:train(epoch, dataloader)
       dataTimer:reset()
    end
 
-   --return top1Sum / N, top5Sum / N, lossSum / N
    return lossSum / N, accSum / N
 end
 
@@ -98,7 +102,7 @@ function Trainer:test(epoch, dataloader)
    local size = dataloader:size()
 
    local nCrops = self.opt.tenCrop and 10 or 1
-   local top1Sum, top5Sum = 0.0, 0.0
+   local lossSum, accSum = 0.0, 0.0
    local N = 0
 
    self.model:evaluate()
@@ -111,76 +115,35 @@ function Trainer:test(epoch, dataloader)
       local output = self.model:forward(self.input):float()
       local batchSize = output:size(1) / nCrops
       local loss = self.criterion:forward(self.model.output, self.target)
+      local acc = eval.getPerformance(output, sample, self.opt.dataset)
 
-      local top1, top5 = self:computeScore(output, sample.target, nCrops)
-      top1Sum = top1Sum + top1*batchSize
-      top5Sum = top5Sum + top5*batchSize
+      lossSum = lossSum + loss*batchSize
+      accSum = accSum + acc*batchSize
       N = N + batchSize
-
-      print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f  top1 %7.3f (%7.3f)  top5 %7.3f (%7.3f)'):format(
-         epoch, n, size, timer:time().real, dataTime, top1, top1Sum / N, top5, top5Sum / N))
+      
+      -- draw heatmap
+      if n == 1 then
+        local hm = visualize.drawOutput(sample.input[1], output[1])
+        --image.display(hm)
+        image.save('checkpoints/val_hm.png', hm)
+        --local hm_gt = visualize.drawOutput(sample.input[1], sample.target[1])
+        --image.display(hm_gt)
+      end
+      
+      --
+      print((' | Test: [%d][%d/%d]    Time %.3f  Data %.3f  Loss %1.4f Acc %1.4f'):format(
+         epoch, n, size, timer:time().real, dataTime, loss, acc))
 
       timer:reset()
       dataTimer:reset()
    end
    self.model:training()
 
-   print((' * Finished epoch # %d     top1: %7.3f  top5: %7.3f\n'):format(
-      epoch, top1Sum / N, top5Sum / N))
+   print((' * Finished epoch # %d     loss: %1.4f  acc: %1.4f\n'):format(
+      epoch, lossSum / N, accSum / N))
 
-   return top1Sum / N, top5Sum / N
+   return lossSum / N, accSum / N
 end
-
---[[ Original code
-function Trainer:computeAcc(output, target, nCrops)
-  if nCrops > 1 then
-    error('Under construction, in function computeAcc')
-  end
-  
-  --Compute accuracy
-  local nSample = target:size(1)
-  local nPart = target:size(2)
-  assert(nPart==16, 'nPart is wrong')
-  for iSample = 1, nSample do
-    for iPart = 1, nPart do
-      -- Estimate final solution
-      -- Get distance from ground truth
-      -- Get accuracy
-      local dist
-      dist[iPart] = torch.norm()
-    end
-  end
-  
-  return acc
-end
-
-function Trainer:computeScore(output, target, nCrops)
-   if nCrops > 1 then
-      -- Sum over crops
-      output = output:view(output:size(1) / nCrops, nCrops, output:size(2))
-         --:exp()
-         :sum(2):squeeze(2)
-   end
-
-   -- Coputes the top1 and top5 error rate
-   local batchSize = output:size(1)
-
-   local _ , predictions = output:float():sort(2, true) -- descending
-
-   -- Find which predictions match the target
-   local correct = predictions:eq(
-      target:long():view(batchSize, 1):expandAs(output))
-
-   -- Top-1 score
-   local top1 = 1.0 - (correct:narrow(2, 1, 1):sum() / batchSize)
-
-   -- Top-5 score, if there are at least 5 classes
-   local len = math.min(5, correct:size(2))
-   local top5 = 1.0 - (correct:narrow(2, 1, len):sum() / batchSize)
-
-   return top1 * 100, top5 * 100
-end
---]]
 
 function Trainer:copyInputs(sample)
    -- Copies the input to a CUDA tensor, if using 1 GPU, or to pinned memory,

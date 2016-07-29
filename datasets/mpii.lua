@@ -44,6 +44,12 @@ function mpiiDataset:size()
   return self.imageInfo.centers:size(1)
 end
 
+-- adhoc
+local meanstd = {
+   mean = { 0.485, 0.456, 0.406 },
+   std = { 0.229, 0.224, 0.225 },
+}
+
 function mpiiDataset:preprocess()
   -- TODO: color normalize
   -- TODO: data augmentation
@@ -60,6 +66,14 @@ function mpiiDataset:preprocess()
         heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma)
       end
     end
+    
+    --[[
+    print(input:max())
+    input, parts_hm = t.ColorNormalize(meanstd)(input, joint_yx)
+    print('max')
+    print(input:max())
+    --]]
+    
     --input:add() ??
     --input:div() ??
     

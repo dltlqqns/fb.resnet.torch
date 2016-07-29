@@ -66,12 +66,21 @@ function checkpoint.save(epoch, model, optimState, isBestModel, trainLosses, tes
 end
 
 function checkpoint.saveplot(trainY, testY, opt, id)
-   local h = gnuplot.pdffigure(paths.concat(opt.save,opt.expID .. id .. '.pdf'))
+  -- linear scale
+   local h1 = gnuplot.pdffigure(paths.concat(opt.save,opt.expID .. id .. '.pdf'))
    gnuplot.plot({'train', torch.Tensor(trainY), '-'},{'val', torch.Tensor(testY), '-'})
    gnuplot.grid(true)
    gnuplot.xlabel('Iteration')
    gnuplot.ylabel('Accuracy')
-   gnuplot.plotflush(h)
+   gnuplot.plotflush(h1)
+   
+   -- log scale
+   local h2 = gnuplot.pdffigure(paths.concat(opt.save,opt.expID .. id .. '_logscale.pdf'))
+   gnuplot.plot({'train', torch.log(torch.Tensor(trainY)), '-'},{'val', torch.log(torch.Tensor(testY)), '-'})
+   gnuplot.grid(true)
+   gnuplot.xlabel('Iteration')
+   gnuplot.ylabel('Accuracy (log-scale)')
+   gnuplot.plotflush(h2)
 end
 
 function checkpoint.saveHeatmap(hm)
