@@ -20,18 +20,12 @@ end
 
 function M.getAccuracy(normalized_dists, pred_invisible, invisible, thres, type)
   local acc
+  invisible[invisible:gt(1)]:fill(1)
   if type=='normal' then
     local visible = 1 - invisible
     local dets = normalized_dists:lt(thres):cmul(visible)
-    local nVisibles = visible:sum(1)
+    local nVisibles = visible:float():sum(1)
     local valid = 1-nVisibles:eq(0) -- to address dividing by 0
-    --[[
-    print(dets:float():sum(1)[valid])
-    print(invisible)
-    print(visible)
-    print(nVisibles)
-    print(nVisibles[valid]:float())
-    --]]
     acc = dets:float():sum(1)[valid]:cdiv(nVisibles[valid]:float()):mean()
   elseif type== 'occlusion-aware' then
     error('under construction')
@@ -51,7 +45,7 @@ function M.getPerformance(output, sample, dataset)
   if dataset=='mpii' then
     iRSHO, iLHIP = 1,3 -- ??
   else
-    --error('under construction')
+    error('unsupported dataset')
     iRSHO, iLHIP = 1,2
   end
   
@@ -60,6 +54,7 @@ function M.getPerformance(output, sample, dataset)
   -- Get GT on the heatmap coord
   local targets_hm = sample.parts_hm:float()
   local invisible = targets_hm:eq(-1):sum(3)
+  invisible[invisible:gt(1)]:fill(1)
   
   -- Get accuracy
   local dists = (preds_hm - targets_hm):pow(2):sum(3):sqrt()

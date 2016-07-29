@@ -58,7 +58,7 @@ function Trainer:train(epoch, dataloader)
       local output = self.model:forward(self.input):float()
       local batchSize = output:size(1)
       local loss = self.criterion:forward(self.model.output, self.target)
-      local acc = eval.getPerformance(output, sample)
+      local acc = eval.getPerformance(output, sample, self.opt.dataset)
 
       self.model:zeroGradParameters()
       self.criterion:backward(self.model.output, self.target)
@@ -87,7 +87,7 @@ function Trainer:train(epoch, dataloader)
    end
 
    --return top1Sum / N, top5Sum / N, lossSum / N
-   return accSum / N, lossSum / N
+   return lossSum / N, accSum / N
 end
 
 function Trainer:test(epoch, dataloader)

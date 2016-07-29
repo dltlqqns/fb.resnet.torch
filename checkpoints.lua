@@ -25,7 +25,7 @@ function checkpoint.latest(opt)
    return latest, optimState
 end
 
-function checkpoint.save(epoch, model, optimState, isBestModel, trainTop1s, testTop1s, opt)
+function checkpoint.save(epoch, model, optimState, isBestModel, trainLosses, testLosses, trainAccs, testAccs, opt)
    local function saveModel(m)
       local modelFile = 'model_' .. epoch .. '.t7'
       local optimFile = 'optimState_' .. epoch .. '.t7'
@@ -36,8 +36,10 @@ function checkpoint.save(epoch, model, optimState, isBestModel, trainTop1s, test
          epoch = epoch,
          modelFile = modelFile,
          optimFile = optimFile,
-		 trainTop1s = trainTop1s,
-		 testTop1s = testTop1s,
+		 trainLosses = trainLosses,
+		 testLosses = testLosses,
+		 trainAccs = trainAccs,
+		 testAccs = testAccs,
       })
 
       if isBestModel then

@@ -39,6 +39,6 @@ output[1][3][1][2] = 1
 output[2][1][1][3] = 3
 local sample = {}
 sample.parts_hm = torch.Tensor({{{1,5},{4,5},{1,2}},{{1,3},{1,1},{1,1}}})
-local acc = eval.getPerformance(output,sample)
+local acc = eval.getPerformance(output,sample, 'mpii')
 print(acc)
 --]]
