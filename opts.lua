@@ -27,7 +27,7 @@ function M.parse(arg)
    ------------- Data options ------------------------
    cmd:option('-nThreads',        6, 'number of data loading threads')
    ------------- Training options --------------------
-   cmd:option('-nEpochs',         0,       'Number of total epochs to run')
+   cmd:option('-nEpochs',         1000,       'Number of total epochs to run')
    cmd:option('-epochNumber',     1,       'Manual epoch number (useful on restarts)')
    cmd:option('-batchSize',       32,      'mini-batch size (1 = pure stochastic)')
    cmd:option('-testOnly',        'false', 'Run on validation set only')

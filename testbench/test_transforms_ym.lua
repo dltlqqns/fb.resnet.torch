@@ -8,6 +8,14 @@ local im = image.lena()
 -- Show original image
 image.display(im)
 
+-- New version
+--1. Compose
+--2. ColorNormalize
+--3. M.RandomCrop
+--4. 
+
+-- Old version
+--[[
 -- Set parameters
 local center = {256,256}
 local scale = 1.28 --2.56
@@ -44,3 +52,4 @@ local center_g = {1,100} --{10,25}
 local sigma_g = 20
 local im_gaussian = t.drawGaussian(res_g, center_g, sigma_g)
 image.display(im_gaussian)
+--]]
