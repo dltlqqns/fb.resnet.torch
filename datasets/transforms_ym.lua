@@ -26,7 +26,7 @@ function M.Pad(input, joint_yx, padx, pady)
   if padx > 0 or pady > 0 then
     local nPart = joint_yx:size(1)
     -- pad, image
-		local temp = input.new(3, input:size(2) + 2*pady, input:size(3) + 2*padx)
+    local temp = input.new(3, input:size(2) + 2*pady, input:size(3) + 2*padx)
     temp:zero()
         :narrow(2, pady+1, input:size(2))
         :narrow(3, padx+1, input:size(3))
@@ -39,36 +39,36 @@ function M.Pad(input, joint_yx, padx, pady)
     offset[1][2] = padx
     joint_yx:add(torch.expand(offset,nPart,2))
   end
-    
-	return input, joint_yx
+
+  return input, joint_yx
 end
 
 function M.Crop(lt,br)
-	return function(input, joint_yx, visible)
+  return function(input, joint_yx, visible)
     local nPart = joint_yx:size(1)
     local offset = torch.Tensor(1,2)
-    
-	 	-- Pad
+
+    -- Pad
     local padx = math.max(0, 1-lt[2], br[2]-input:size(3))
     local pady = math.max(0, 1-lt[1], br[1]-input:size(2))
     input, joint_yx = M.Pad(input, joint_yx, padx, pady)
         
-		-- Crop
-		-- crop, image
+    -- Crop
+    -- crop, image
     -- one-base
     local x1 = padx + lt[2]
     local y1 = pady + lt[1]
     local x2 = padx + br[2]
     local y2 = pady + br[1]
-		local output = image.crop(input, x1-1, y1-1, x2, y2) -- zero-base, x2,y2: non-inclusive
-		-- crop, joint
+    local output = image.crop(input, x1-1, y1-1, x2, y2) -- zero-base, x2,y2: non-inclusive
+    -- crop, joint
     offset = torch.zeros(1,2)
     offset[1][1] = y1
     offset[1][2] = x1
     joint_yx:add(-torch.expand(offset,nPart,2)):add(1)
 
-		return output, joint_yx, visible
-	end
+    return output, joint_yx, visible
+  end
 end
 
 function M.Resize(res)

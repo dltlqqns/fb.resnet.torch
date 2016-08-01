@@ -53,7 +53,6 @@ local meanstd = {
 function mpiiDataset:preprocess()
   return function(sample)
     -- Calculate parameters
-    -- crop
     local lt = t.transform({1,1}, t.getTransformCrop2Orig(sample.center_yx, sample.scale, self.opt.outputRes))
     local br = t.transform({self.opt.inputRes,self.opt.inputRes}, t.getTransformCrop2Orig(sample.center_yx, sample.scale, self.opt.inputRes))
     local deg = 30
