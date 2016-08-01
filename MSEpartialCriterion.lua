@@ -7,7 +7,7 @@ function MSEpartialCriterion:__init(sizeAverage)
    else
      self.sizeAverage = true
    end
-   self.p = p or 0.4
+   self.p = p or 0.3
    self.mask = torch.Tensor()
 end
 

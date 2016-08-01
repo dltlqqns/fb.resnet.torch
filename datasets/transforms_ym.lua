@@ -3,17 +3,11 @@ require 'image'
 local M = {}
 
 function M.Compose(transforms)
-  return function(sample)
-    -- Jitter input and labels
-    local input, joint_yx = sample.input, sample.joint_yx
+  return function(input, joint_yx)
     for _, transform in ipairs(transforms) do
       input, joint_yx = transform(input, joint_yx)
     end
-    
-    return {
-      input = input,
-      parts_hm = joint_yx,
-    }
+    return input, joint_yx
   end
 end
 
@@ -28,32 +22,108 @@ function M.ColorNormalize(meanstd)
   end
 end
 
--- Random crop form larger image with optional zero padding
-function M.RandomCrop(size, padding)
-   padding = padding or 0
-
-   return function(input, joint_yx)
-      if padding > 0 then
-         local temp = input.new(3, input:size(2) + 2*padding, input:size(3) + 2*padding)
-         temp:zero()
-            :narrow(2, padding+1, input:size(2))
-            :narrow(3, padding+1, input:size(3))
-            :copy(input)
-         input = temp
-      end
-
-      local w, h = input:size(3), input:size(2)
-      if w == size and h == size then
-         return input
-      end
-
-      local x1, y1 = torch.random(0, w - size), torch.random(0, h - size)
-      local out = image.crop(input, x1, y1, x1 + size, y1 + size)
-      assert(out:size(2) == size and out:size(3) == size, 'wrong crop size')
-      return out, joint_yx
-   end
+function M.Pad(input, joint_yx, padx, pady)
+  if padx > 0 or pady > 0 then
+    -- pad, image
+		local temp = input.new(3, input:size(2) + 2*pady, input:size(3) + 2*padx)
+    temp:zero()
+        :narrow(2, pady+1, input:size(2))
+        :narrow(3, padx+1, input:size(3))
+        :copy(input)
+    input = temp
+    
+    -- pad, joint
+    offset[1][1] = padx
+    offset[1][2] = pady
+    joint_yx:add(torch.expand(offset,nPart,2))
+  end
+    
+	return input, joint_yx
 end
 
+function M.Crop(lt,br)
+	return function(input, joint_yx)
+    local nPart = joint_yx:size(1)
+    local offset = torch.Tensor(1,2)
+    
+	 	-- Pad
+    local padx = math.max(0, 1-lt[2], br[2]-input:size(3))
+    local pady = math.max(0, 1-lt[1], br[1]-input:size(2))
+    input, joint_yx = M.Pad(input, joint_yx, padx, pady)
+        
+		-- Crop
+		-- crop, image
+		local output = image.crop(input, x1, y1, x1+size, y1+size)
+		-- crop, joint
+    offset[1][1] = x1
+    offset[1][2] = y1
+    joint_yx:add(-torch.expand(offset,nPart,2)):add(1)
+
+		return output, joint_yx
+	end
+end
+
+function M.Resize(res)
+  return function(input, joint_yx)
+    assert(input:size(2)==input:size(3), 'current implementation only allows square input')
+    local resized = image.scale(input, res, res)
+    joint_yx:add(-1):mul(res/input:size(2)):add(1)
+    return resized, joint_yx
+  end
+end
+
+function M.Rotate(deg)
+  return function(input, joint_yx)
+    if deg ~= 0 then
+      local angle = deg * math.pi / 180
+      local res = input:size(2)
+      assert(input:size(2)==input:size(3), 'current implementation only allows square input')
+      -- image
+      input = image.rotate(input, (torch.uniform()-0.5)*ang, 'bilinear')
+      -- joint
+      local r = torch.eye(3)
+      local c, s = math.cos(ang), math.sin(ang)
+      r[1][1] = c
+      r[1][2] = -s
+      r[2][1] = s
+      r[2][2] = c
+      local t = torch.eye(3)
+      t[1][3] = -res/2
+      t[2][3] = -res/2
+      local t_inv = torch.eye(3)
+      t[1][3] = res/2
+      t[2][3] = res/2
+      joint_yx = transform(joint_yx, t_inv * r * t)
+    end
+    return input, joint_yx
+  end
+end
+
+function M.Flip()
+  return function(input, joint_yx)
+    assert(input:size(2)==input:size(3), 'current implementation only allows square input')
+    local res = input:size(2)
+    bFlip = torch.uniform() < 0.5
+    if bFlip then
+      local flipped = image.hflip()
+      -- part id change
+      joint_yx = res - joint_yx + 1
+      joint_yx
+      return flipped, joint_yx
+    else
+      return input, joint_yx
+    end
+  end
+end
+
+function M.ColorJitter()
+  return function(input, joint_yx)
+    input:narrow(1,1,1):mul(torch.uniform(0.8,1.2)):clamp(:,1)
+    input:narrow(1,2,1):mul(torch.uniform(0.8,1.2)):clamp(:,1)
+    input:narrow(1,3,1):mul(torch.uniform(0.8,1.2)):clamp(:,1)
+    return input, joint_yx
+  end
+end
 
 function M.getTransformOrig2Crop(center_yx, scale, res)
   -- original to cropped coordinate
@@ -92,7 +162,8 @@ function M.padncrop(input, lt, br)
   local padx = math.max(0, 1-lt[2], br[2]-input:size(3))
   local pady = math.max(0, 1-lt[1], br[1]-input:size(2))
   local padded = torch.zeros(3, 2*pady+input:size(2), 2*padx+input:size(3))
-  padded:sub(1,3,pady+1,pady+input:size(2),padx+1,padx+input:size(3)):copy(input)
+  padded:sub(1,3,pady+1,pady+input:size(2),padx+1,padx+input:size(3))
+        :copy(input)
   -- Crop image from padded image
   local lt_padded = {pady+lt[1], padx+lt[2]}
   local br_padded = {pady+br[1], padx+br[2]}
