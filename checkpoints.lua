@@ -83,9 +83,4 @@ function checkpoint.saveplot(trainY, testY, opt, id)
    gnuplot.plotflush(h2)
 end
 
-function checkpoint.saveHeatmap(hm)
-  local im = drawOutput(torch.Tensor(3,hm:size(1),hm:size(2)),hm)
-  return im
-end
-
 return checkpoint

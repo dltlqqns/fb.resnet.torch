@@ -5,7 +5,7 @@ local M = {}
 local mpiiDataset = torch.class('resnet.mpiiDataset', M)
 
 function mpiiDataset:__init(imageInfo, opt, split)
-	self.imageInfo = imageInfo[split]
+  self.imageInfo = imageInfo[split]
   self.opt = opt
   self.split = split
   self.nPart = imageInfo[split].parts:size(2)
@@ -33,7 +33,7 @@ end
 
 function mpiiDataset:loadImage(path)
   local ok, input = pcall(function()
-      return image.load(path, 3, 'float')
+    return image.load(path, 3, 'float')
   end)
   assert(ok, 'image loading error')
   return input
@@ -46,57 +46,54 @@ end
 
 -- adhoc
 local meanstd = {
-   mean = { 0.485, 0.456, 0.406 },
-   std = { 0.229, 0.224, 0.225 },
+  mean = { 0.485, 0.456, 0.406 },
+  std = { 0.229, 0.224, 0.225 },
 }
 
 function mpiiDataset:preprocess()
-	---[[
-   return function(sample)
+  return function(sample)
     -- Calculate parameters
     -- crop
     local lt = t.transform({1,1}, t.getTransformCrop2Orig(sample.center_yx, sample.scale, self.opt.outputRes))
     local br = t.transform({self.opt.inputRes,self.opt.inputRes}, t.getTransformCrop2Orig(sample.center_yx, sample.scale, self.opt.inputRes))
-    -- resize
     local deg = 30
     
     -- Do preprocess
-     local trans = t.Compose({
-			 t.Crop(lt, br),
-			 t.Resize(self.opt.inputRes),
-			 t.Rotate(deg),
-			 t.Flip(),
-			 t.ColorJitter(),
-			 --t.Lighting(),
-			 t.ColorNormalize(meanstd),
-		   })
+    local trans = t.Compose({
+      t.Crop(lt, br),
+      t.Resize(self.opt.inputRes),
+      t.Rotate(deg),
+      t.Flip(),
+      t.ColorJitter(),
+      --t.Lighting(),
+      t.ColorNormalize(meanstd),
+    })
     local input, parts_input, visible = trans(sample.input, sample.joint_yx, sample.visible)
-
-   local parts_hm = parts_input:clone()
-   parts_hm:add(-0.5):mul(self.opt.outputRes/self.opt.inputRes):add(0.5)
-   parts_hm = torch.round(parts_hm)
+    -- From input coordinate to heatmap coordinate 
+    local parts_hm = parts_input:clone()
+    parts_hm:add(-0.5):mul(self.opt.outputRes/self.opt.inputRes):add(0.5)
+    parts_hm = torch.round(parts_hm) -- it may make error... TODO: fix!
 	 
-	-- Generate heatmap
-     local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
-	 for iPart = 1, self.nPart do
-	   if visible[iPart]~=0 then
-	     heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma)
-	   end
-	 end
+    -- Generate heatmap
+    local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
+    for iPart = 1, self.nPart do
+      if visible[iPart]~=0 then
+        heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma)
+    end
+  end
 
-	 -- Return
-	 return {
+  -- Return
+  return {
     -- for training
-		input = input,
-	  target = heatmap,
-		-- for evaluation
+    input = input,
+    target = heatmap,
+    -- for evaluation
     parts_hm = parts_hm,
     visible = visible,
-	 }
-  end
-  --]]
+  }
+  end  
   
-  
+  -- Old version
   --[[
   return function(sample)
     -- Crop input image
