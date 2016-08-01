@@ -20,8 +20,8 @@ local joint_output = joint_yx:clone()
 local visible_output = visible:clone()
 
 -- Show original image
-local im = vis.drawSkeleton(input, {}, joint_yx, visible)
-image.display(im)
+--local im = vis.drawSkeleton(input, {}, joint_yx, visible)
+--image.display(im)
 
 -- New version
 local tt
@@ -51,7 +51,7 @@ im = vis.drawSkeleton(padded, {}, joint_padded, visible)
 image.display(im)
 --]]
 
----[[
+--[[
 --4. Crop
 scale = sample.scale
 center_yx = sample.center_yx
@@ -85,6 +85,7 @@ image.display(im)
 --]]
 
 --1. Compose
+--[[
 tt = t.Compose({t.Crop(lt, br),
                 t.Resize(inputRes),
                 t.Rotate(deg),
@@ -94,7 +95,21 @@ tt = t.Compose({t.Crop(lt, br),
 output, joint_output, visible_output = tt(output, joint_output, visible_output)
 im = vis.drawSkeleton(output, {}, joint_output, visible_output)
 image.display(im)
+--]]
 
+-------------------------------------------------------------------
+--9. circlePatch
+local radius = 3
+local patch = t.circlePatch(radius)
+print(patch)
+--10. drawActivation
+
+--11. drawDistActivation
+
+--12. generateHeatmap
+
+
+-------------------------------------------------------------------
 -- Old version
 --[[
 -- Set parameters

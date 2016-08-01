@@ -175,13 +175,131 @@ function M.transform(pt_yx, t)
   return trans_pt_yx
 end
 
--- TODO
-function M.generateHeatmap()
-  local heatmap
+-- Generate patch with circular activation
+function M.circlePatch(radius)
+  local output = torch.zeros(2*radius+1, 2*radius+1)
+  local center = radius + 1
+  for x = 1, 2*radius+1 do
+    for y = 1, 2*radius+1 do
+      print(x,y)
+      print(math.sqrt((x-center)*(x-center)+(y-center)*(y-center)))
+      if(math.sqrt((x-center)*(x-center)+(y-center)*(y-center)) <= radius) then
+        output[y][x] = 1
+      end
+    end
+  end
+  return output
+end
+
+-- Generate heatmap for one part
+function M.drawActivation(res, center_yx, param, type)
+  local mask, maskSize, halfMaskSize
+  local xmin_o, xmax_o, ymin_o, ymax_o
+  local xmin_m, xmax_m, ymin_m, ymax_m
+  -- parameters
+  if type=='gaussian' then
+    local sigma = param
+    maskSize = 6*sigma + 1
+    halfMaskSize = 3*sigma
+    mask = image.gaussian(maskSize, 0.25)
+  elseif type=='uniform' then
+    local radius = param
+    maskSize = 2*radius + 1
+    halfMaskSize = radius
+    mask = M.circlePatch(radius)
+  else
+    error('wrong type')
+  end
+  -- boundaries
+  xmin_o = math.max(1, center_yx[2]-halfMaskSize)
+  ymin_o = math.max(1, center_yx[1]-halfMaskSize)
+  xmax_o = math.min(res, center_yx[2]+halfMaskSize)
+  ymax_o = math.min(res, center_yx[1]+halfMaskSize)
+  xmin_m = math.max(1, xmin_o-center_yx[2]+halfMaskSize+1)
+  ymin_m = math.max(1, ymin_o-center_yx[1]+halfMaskSize+1)
+  xmax_m = math.min(maskSize, xmax_o-center_yx[2]+halfMaskSize+1)
+  ymax_m = math.min(maskSize, ymax_o-center_yx[1]+halfMaskSize+1)
+  
+  -- draw
+  local output = torch.zeros(res,res)
+  if(ymax_o-ymin_o>0 and xmax_o-xmin_o>0) then
+    output:sub(ymin_o,ymax_o,xmin_o,xmax_o):copy(mask:sub(ymin_m,ymax_m,xmin_m,xmax_m))
+  end
+  return output
+end
+
+-- Generate distributed heatmap for one part
+function M.drawDistActivation(res, parts_hm, iPart, param, type)
+  -- Get bounding box from joint locations
+  local getBB = function(parts_hm)
+    local xmin = math.min(parts_hm:narrow(2,2,1))
+    local xmax = math.max(parts_hm:narrow(2,2,1))
+    local ymin = math.min(parts_hm:narrow(2,1,1))
+    local ymax = math.max(parts_hm:narrow(2,1,1))
+    return {
+      xmin = xmin,
+      xmax = xmax,
+      ymin = ymin,
+      ymax = ymax,
+    }
+  end
+  -- Get relative location of pt_tx wrt bounding box
+  local getLocIdx = function(bb, pt_yx)
+    -- one-base
+    local ix = math.max(math.floor((pt_yx[2]-bb.xmin) / ((bb.xmax-bb.xmin)/3)),1)
+    local iy = math.max(math.floor((pt_yx[1]-bb.ymin) / ((bb.ymax-bb.ymin)/3)),1)
+    local iLocation = ix + (iy-1)*3
+    return iLocation
+  end
+
+  -- Get heatmap
+  local bb = getBB(parts_hm)
+  local iLocation = getLocIdx(bb, parts_hm[iPart])
+  local heatmap = torch.zeros(9,res,res)
+  heatmap[iLocation] = M.drawActivation(res, parts_hm[iPart], param, type)
+  return heatmap
+end
+
+-- Generate heatmap for all parts
+function M.generateHeatmap(res, parts_hm, type_shape, type_class)
+  local genfunc
+  local nCh
+  local sigma = 1 -- parameter for gaussian shape
+  local radius = 15 -- parameter for uniform shape
+  local param
+  
+  -- Set parameter according to type_shape
+  if type_shape=='gaussian' then
+    param = sigma
+  elseif type_shape=='uniform' then
+    param = radius
+  else
+    error('wrong type_shape. gaussian | uniform')
+  end
+
+  -- Set per-part heatmap generation function and number of channels per part
+  if type_class=='plain' then
+    genfunc = function(x,y,iPart) return M.drawActivation(x,y[iPart],param,type_shape) end
+    nCh = 1
+  elseif type=='distributed' then
+    genfunc = function(x,y,iPart) return M.drawDistActivation(x,y,iPart,param,type_shape) end
+    nCh = 9
+  else
+    error('wrong type')
+  end
+  
+  -- Generate heatmap
+  local heatmap = torch.zeros()
+  for iPart = 1, parts_hm:size(1) do
+    local s = (iPart-1)*nCh + 1
+    heatmap:narrow(1,s,nCh):clone(genfunc(res, parts_hm, iPart))
+  end
   
   return heatmap
 end
 
+-- Old version
+--[[
 function M.drawGaussian(res, center_yx, sigma)
   -- Return (res x res) image with gaussian heatmap of (center, sigma)
   -- TODO: allow float values for center_yx
@@ -210,7 +328,6 @@ function M.drawGaussian(res, center_yx, sigma)
   return output
 end
 
---[[
 function M.padncrop(input, lt, br)
   -- lt <= . <= br
     assert(input:nDimension()==3, 'wrong input format in function padncrop')

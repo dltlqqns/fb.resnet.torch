@@ -43,7 +43,7 @@ function M.getPerformance(output, sample, dataset)
   local thres = 0.5 -- pckh
   local iRSHO, iLHIP
   if dataset=='mpii' then
-    iRSHO, iLHIP = 1,3 -- ??
+    iRSHO, iLHIP = 3,14 -- ??
   else
     error('unsupported dataset')
     iRSHO, iLHIP = 1,2
