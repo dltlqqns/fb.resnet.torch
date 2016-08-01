@@ -3,27 +3,28 @@ require 'image'
 local M = {}
 
 function M.Compose(transforms)
-  return function(input, joint_yx)
+  return function(input, joint_yx, visible)
     for _, transform in ipairs(transforms) do
-      input, joint_yx = transform(input, joint_yx)
+      input, joint_yx, visible = transform(input, joint_yx, visible)
     end
-    return input, joint_yx
+    return input, joint_yx, visible
   end
 end
 
 function M.ColorNormalize(meanstd)
-  return function(input, joint_yx)
+  return function(input, joint_yx, visible)
     local output = input:clone()
     for i = 1, 3 do
       output[i]:add(-meanstd.mean[i])
       output[i]:div(meanstd.std[i])
     end
-    return output, joint_yx
+    return output, joint_yx, visible
   end
 end
 
 function M.Pad(input, joint_yx, padx, pady)
   if padx > 0 or pady > 0 then
+    local nPart = joint_yx:size(1)
     -- pad, image
 		local temp = input.new(3, input:size(2) + 2*pady, input:size(3) + 2*padx)
     temp:zero()
@@ -33,8 +34,9 @@ function M.Pad(input, joint_yx, padx, pady)
     input = temp
     
     -- pad, joint
-    offset[1][1] = padx
-    offset[1][2] = pady
+    local offset = torch.zeros(1,2)
+    offset[1][1] = pady
+    offset[1][2] = padx
     joint_yx:add(torch.expand(offset,nPart,2))
   end
     
@@ -42,7 +44,7 @@ function M.Pad(input, joint_yx, padx, pady)
 end
 
 function M.Crop(lt,br)
-	return function(input, joint_yx)
+	return function(input, joint_yx, visible)
     local nPart = joint_yx:size(1)
     local offset = torch.Tensor(1,2)
     
@@ -53,36 +55,42 @@ function M.Crop(lt,br)
         
 		-- Crop
 		-- crop, image
-		local output = image.crop(input, x1, y1, x1+size, y1+size)
+    -- one-base
+    local x1 = padx + lt[2]
+    local y1 = pady + lt[1]
+    local x2 = padx + br[2]
+    local y2 = pady + br[1]
+		local output = image.crop(input, x1-1, y1-1, x2, y2) -- zero-base, x2,y2: non-inclusive
 		-- crop, joint
-    offset[1][1] = x1
-    offset[1][2] = y1
+    offset = torch.zeros(1,2)
+    offset[1][1] = y1
+    offset[1][2] = x1
     joint_yx:add(-torch.expand(offset,nPart,2)):add(1)
 
-		return output, joint_yx
+		return output, joint_yx, visible
 	end
 end
 
 function M.Resize(res)
-  return function(input, joint_yx)
-    assert(input:size(2)==input:size(3), 'current implementation only allows square input')
+  return function(input, joint_yx, visible)
+    --assert(input:size(2)==input:size(3), 'current implementation only allows square input')
     local resized = image.scale(input, res, res)
     joint_yx:add(-1):mul(res/input:size(2)):add(1)
-    return resized, joint_yx
+    return resized, joint_yx, visible
   end
 end
 
 function M.Rotate(deg)
-  return function(input, joint_yx)
+  return function(input, joint_yx, visible)
     if deg ~= 0 then
-      local angle = deg * math.pi / 180
+      local angle = (torch.uniform()-0.5) *deg * math.pi / 180
       local res = input:size(2)
       assert(input:size(2)==input:size(3), 'current implementation only allows square input')
       -- image
-      input = image.rotate(input, (torch.uniform()-0.5)*ang, 'bilinear')
+      input = image.rotate(input, angle, 'bilinear')
       -- joint
       local r = torch.eye(3)
-      local c, s = math.cos(ang), math.sin(ang)
+      local c, s = math.cos(angle), math.sin(angle)
       r[1][1] = c
       r[1][2] = -s
       r[2][1] = s
@@ -91,37 +99,51 @@ function M.Rotate(deg)
       t[1][3] = -res/2
       t[2][3] = -res/2
       local t_inv = torch.eye(3)
-      t[1][3] = res/2
-      t[2][3] = res/2
-      joint_yx = transform(joint_yx, t_inv * r * t)
+      t_inv[1][3] = res/2
+      t_inv[2][3] = res/2
+      for iPart = 1 , joint_yx:size(1) do
+        joint_yx[iPart] = M.transform(joint_yx[iPart], t_inv * r * t)
+      end
     end
-    return input, joint_yx
+    return input, joint_yx, visible
   end
 end
 
 function M.Flip()
-  return function(input, joint_yx)
+  return function(input, joint_yx, visible)
     assert(input:size(2)==input:size(3), 'current implementation only allows square input')
     local res = input:size(2)
     bFlip = torch.uniform() < 0.5
     if bFlip then
-      local flipped = image.hflip()
+      local flipped = image.hflip(input)
       -- part id change
-      joint_yx = res - joint_yx + 1
-      joint_yx
-      return flipped, joint_yx
+      matchedParts = {
+        {1,6},    {2,5},    {3,4},
+        {11,16},  {12,15},  {13,14}
+      }
+      joint_yx:narrow(2,2,1):mul(-1):add(res):add(1)
+      for i = 1, #matchedParts do
+        local idx1, idx2 = unpack(matchedParts[i])
+        local tmp = joint_yx:narrow(1, idx1, 1):clone()
+        joint_yx:narrow(1, idx1, 1):copy(joint_yx:narrow(1, idx2, 1))
+        joint_yx:narrow(1, idx2, 1):copy(tmp)
+        tmp = visible[idx1]
+        visible[idx1] = visible[idx2]
+        visible[idx2] = tmp
+      end
+      return flipped, joint_yx, visible
     else
-      return input, joint_yx
+      return input, joint_yx, visible
     end
   end
 end
 
 function M.ColorJitter()
-  return function(input, joint_yx)
-    input:narrow(1,1,1):mul(torch.uniform(0.8,1.2)):clamp(:,1)
-    input:narrow(1,2,1):mul(torch.uniform(0.8,1.2)):clamp(:,1)
-    input:narrow(1,3,1):mul(torch.uniform(0.8,1.2)):clamp(:,1)
-    return input, joint_yx
+  return function(input, joint_yx, visible)
+    input:narrow(1,1,1):mul(torch.uniform(0.8,1.2)):clamp(0,1)
+    input:narrow(1,2,1):mul(torch.uniform(0.8,1.2)):clamp(0,1)
+    input:narrow(1,3,1):mul(torch.uniform(0.8,1.2)):clamp(0,1)
+    return input, joint_yx, visible
   end
 end
 
@@ -188,7 +210,9 @@ end
 
 function M.drawGaussian(res, center_yx, sigma)
   -- Return (res x res) image with gaussian heatmap of (center, sigma)
+  -- TODO: allow float values for center_yx
   assert(sigma-math.floor(sigma)==0,'sigma should be integer valued')
+  assert((center_yx-torch.floor(center_yx)):apply(function(x) return x==0 end):mean()==1,'center_yx should be integer valued in current implementation')
   local size = 6*sigma + 1
   local g = image.gaussian(size, 0.25)
   local lt_o = {math.max(center_yx[1] - 3*sigma,1), math.max(center_yx[2] - 3*sigma,1)}

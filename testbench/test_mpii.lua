@@ -1,5 +1,6 @@
 local Dataset = require('datasets/mpii')
 local opts = require('opts')
+local vis = require('visualize')
 
 local imageInfo = torch.load('gen/mpii.t7')
 local opt = opts.parse(arg)
@@ -11,14 +12,13 @@ print(dataset:size())
 
 -- Get data from idx
 local idx = 2
-local data = dataset:get(idx)
-image.display(data.input)
+local sample = dataset:get(idx)
+image.display(sample.input)
 
 -- Preprocess
-data_preprocessed = dataset:preprocess()(data)
-image.display(data_preprocessed.input)
-local heatmap = torch.zeros(data_preprocessed.target:size(2),data_preprocessed.target:size(3))
+sample_preprocessed = dataset:preprocess()(sample)
+local heatmap = torch.zeros(sample_preprocessed.target:size(2),sample_preprocessed.target:size(3))
 for iPart = 1, 16 do
-  heatmap:add(data_preprocessed.target[iPart])
+  heatmap:add(sample_preprocessed.target[iPart])
 end
 image.display(heatmap)

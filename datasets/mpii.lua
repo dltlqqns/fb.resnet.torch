@@ -51,46 +51,53 @@ local meanstd = {
 }
 
 function mpiiDataset:preprocess()
-	--[[
+	---[[
    return function(sample)
     -- Calculate parameters
-	
     -- crop
+    local lt = t.transform({1,1}, t.getTransformCrop2Orig(sample.center_yx, sample.scale, self.opt.outputRes))
+    local br = t.transform({self.opt.inputRes,self.opt.inputRes}, t.getTransformCrop2Orig(sample.center_yx, sample.scale, self.opt.inputRes))
     -- resize
+    local deg = 30
     
     -- Do preprocess
      local trans = t.Compose({
-			 t.Crop(),
-			 t.Resize(),
-			 t.Rotate(),
+			 t.Crop(lt, br),
+			 t.Resize(self.opt.inputRes),
+			 t.Rotate(deg),
 			 t.Flip(),
 			 t.ColorJitter(),
-			 t.Lighting(),
+			 --t.Lighting(),
 			 t.ColorNormalize(meanstd),
 		   })
-	 local input, parts_hm = trans(sample.input, sample.joint_yx)
+    local input, parts_input, visible = trans(sample.input, sample.joint_yx, sample.visible)
+
+   local parts_hm = parts_input:clone()
+   parts_hm:add(-0.5):mul(self.opt.outputRes/self.opt.inputRes):add(0.5)
+   parts_hm = torch.round(parts_hm)
 	 
 	-- Generate heatmap
      local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
 	 for iPart = 1, self.nPart do
-	   if sample.visible[iPart]~=0 then
-	     heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma) 
+	   if visible[iPart]~=0 then
+	     heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma)
 	   end
 	 end
 
 	 -- Return
 	 return {
-        -- for training
+    -- for training
 		input = input,
-	    target = heatmap,
+	  target = heatmap,
 		-- for evaluation
-        parts_hm = parts_hm,
+    parts_hm = parts_hm,
+    visible = visible,
 	 }
   end
   --]]
   
   
-  ---[[
+  --[[
   return function(sample)
     -- Crop input image
     local input = t.crop(sample.input, sample.center_yx, sample.scale, self.opt.inputRes)
