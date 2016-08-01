@@ -51,8 +51,46 @@ local meanstd = {
 }
 
 function mpiiDataset:preprocess()
-  -- TODO: color normalize
-  -- TODO: data augmentation
+	--[[
+   return function(sample)
+    -- Calculate parameters
+	
+    -- crop
+    -- resize
+    
+    -- Do preprocess
+     local trans = t.Compose({
+			 t.Crop(),
+			 t.Resize(),
+			 t.Rotate(),
+			 t.Flip(),
+			 t.ColorJitter(),
+			 t.Lighting(),
+			 t.ColorNormalize(meanstd),
+		   })
+	 local input, parts_hm = trans(sample.input, sample.joint_yx)
+	 
+	-- Generate heatmap
+     local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
+	 for iPart = 1, self.nPart do
+	   if sample.visible[iPart]~=0 then
+	     heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma) 
+	   end
+	 end
+
+	 -- Return
+	 return {
+        -- for training
+		input = input,
+	    target = heatmap,
+		-- for evaluation
+        parts_hm = parts_hm,
+	 }
+  end
+  --]]
+  
+  
+  ---[[
   return function(sample)
     -- Crop input image
     local input = t.crop(sample.input, sample.center_yx, sample.scale, self.opt.inputRes)
@@ -67,26 +105,6 @@ function mpiiDataset:preprocess()
       end
     end
     
-    --[[
-    print(input:max())
-    input, parts_hm = t.ColorNormalize(meanstd)(input, joint_yx)
-    print('max')
-    print(input:max())
-    --]]
-    
-    --input:add() ??
-    --input:div() ??
-    
-    --[[
-    -- Data augmentation
-    local s = 
-    local f = 
-    local r = 
-    
-    local input = t.(sample.image_cropped, s,f,r)
-    local heatmap = generateHeatmap(sample.joint_yx, s,f,r)
-    --]]
-    
     return {
       -- for training
       input = input,
@@ -95,6 +113,7 @@ function mpiiDataset:preprocess()
       parts_hm = parts_hm,
     }
   end
+  --]]
 end
 
 return M.mpiiDataset
