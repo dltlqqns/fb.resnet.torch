@@ -1,5 +1,4 @@
 require 'image'
-
 local M = {}
 
 function M.Compose(transforms)
@@ -232,10 +231,10 @@ end
 function M.drawDistActivation(res, parts_hm, iPart, param, type)
   -- Get bounding box from joint locations
   local getBB = function(parts_hm)
-    local xmin = math.min(parts_hm:narrow(2,2,1))
-    local xmax = math.max(parts_hm:narrow(2,2,1))
-    local ymin = math.min(parts_hm:narrow(2,1,1))
-    local ymax = math.max(parts_hm:narrow(2,1,1))
+    local xmin = torch.min(parts_hm:narrow(2,2,1))
+    local xmax = torch.max(parts_hm:narrow(2,2,1))
+    local ymin = torch.min(parts_hm:narrow(2,1,1))
+    local ymax = torch.max(parts_hm:narrow(2,1,1))
     return {
       xmin = xmin,
       xmax = xmax,
@@ -299,7 +298,6 @@ function M.generateHeatmap(res, parts_hm, type_shape, type_class)
 end
 
 -- Old version
---[[
 function M.drawGaussian(res, center_yx, sigma)
   -- Return (res x res) image with gaussian heatmap of (center, sigma)
   -- TODO: allow float values for center_yx
@@ -312,13 +310,11 @@ function M.drawGaussian(res, center_yx, sigma)
   local lt_g = {math.max(1,lt_o[1]-center_yx[1]+3*sigma+1), math.max(1,lt_o[2]-center_yx[2]+3*sigma+1)}
   local br_g = {math.min(size,br_o[1]-center_yx[1]+3*sigma+1), math.min(size,br_o[2]-center_yx[2]+3*sigma+1)}
   
-  --[[
-  print('hello')
-  print(br_o[1], lt_o[1], br_o[2], lt_o[2])
-  print(br_g[1], lt_g[1], br_g[2], lt_g[2])
-  print(br_o[1]-lt_o[1], br_o[2]-lt_o[2])
-  print(br_g[1]-lt_g[1], br_g[2]-lt_g[2])
-  --]]
+  --print('hello')
+  --print(br_o[1], lt_o[1], br_o[2], lt_o[2])
+  --print(br_g[1], lt_g[1], br_g[2], lt_g[2])
+  --print(br_o[1]-lt_o[1], br_o[2]-lt_o[2])
+  --print(br_g[1]-lt_g[1], br_g[2]-lt_g[2])
 
   local output = torch.zeros(res,res)
   if(br_o[1]-lt_o[1]>0 and br_o[2]-lt_o[2]>0) then
@@ -328,6 +324,7 @@ function M.drawGaussian(res, center_yx, sigma)
   return output
 end
 
+--[[
 function M.padncrop(input, lt, br)
   -- lt <= . <= br
     assert(input:nDimension()==3, 'wrong input format in function padncrop')
