@@ -1,6 +1,6 @@
 local MSEpartialCriterion, parent = torch.class('nn.MSEpartialCriterion', 'nn.Criterion')
 
-function MSEpartialCriterion:__init(sizeAverage)
+function MSEpartialCriterion:__init(p,sizeAverage)
    parent.__init(self)
    if sizeAverage ~= nil then
      self.sizeAverage = sizeAverage

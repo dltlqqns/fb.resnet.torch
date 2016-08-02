@@ -180,8 +180,6 @@ function M.circlePatch(radius)
   local center = radius + 1
   for x = 1, 2*radius+1 do
     for y = 1, 2*radius+1 do
-      print(x,y)
-      print(math.sqrt((x-center)*(x-center)+(y-center)*(y-center)))
       if(math.sqrt((x-center)*(x-center)+(y-center)*(y-center)) <= radius) then
         output[y][x] = 1
       end
@@ -245,8 +243,8 @@ function M.drawDistActivation(res, parts_hm, iPart, param, type)
   -- Get relative location of pt_tx wrt bounding box
   local getLocIdx = function(bb, pt_yx)
     -- one-base
-    local ix = math.max(math.floor((pt_yx[2]-bb.xmin) / ((bb.xmax-bb.xmin)/3)),1)
-    local iy = math.max(math.floor((pt_yx[1]-bb.ymin) / ((bb.ymax-bb.ymin)/3)),1)
+    local ix = math.min(math.floor((pt_yx[2]-bb.xmin) / ((bb.xmax-bb.xmin)/3))+1, 3)
+    local iy = math.min(math.floor((pt_yx[1]-bb.ymin) / ((bb.ymax-bb.ymin)/3))+1, 3)
     local iLocation = ix + (iy-1)*3
     return iLocation
   end
@@ -261,10 +259,12 @@ end
 
 -- Generate heatmap for all parts
 function M.generateHeatmap(res, parts_hm, type_shape, type_class)
+  -- type_shape: gaussian | uniform
+  -- type_class: plain | distributed
   local genfunc
   local nCh
   local sigma = 1 -- parameter for gaussian shape
-  local radius = 15 -- parameter for uniform shape
+  local radius = 2 -- parameter for uniform shape
   local param
   
   -- Set parameter according to type_shape
@@ -280,7 +280,7 @@ function M.generateHeatmap(res, parts_hm, type_shape, type_class)
   if type_class=='plain' then
     genfunc = function(x,y,iPart) return M.drawActivation(x,y[iPart],param,type_shape) end
     nCh = 1
-  elseif type=='distributed' then
+  elseif type_class=='distributed' then
     genfunc = function(x,y,iPart) return M.drawDistActivation(x,y,iPart,param,type_shape) end
     nCh = 9
   else
@@ -288,16 +288,18 @@ function M.generateHeatmap(res, parts_hm, type_shape, type_class)
   end
   
   -- Generate heatmap
-  local heatmap = torch.zeros()
-  for iPart = 1, parts_hm:size(1) do
+  local nPart = parts_hm:size(1)
+  local heatmap = torch.zeros(nPart*nCh,res,res)
+  for iPart = 1, nPart do
     local s = (iPart-1)*nCh + 1
-    heatmap:narrow(1,s,nCh):clone(genfunc(res, parts_hm, iPart))
+    heatmap:narrow(1,s,nCh):copy(genfunc(res, parts_hm, iPart))
   end
   
   return heatmap
 end
 
 -- Old version
+--[[
 function M.drawGaussian(res, center_yx, sigma)
   -- Return (res x res) image with gaussian heatmap of (center, sigma)
   -- TODO: allow float values for center_yx
@@ -324,7 +326,6 @@ function M.drawGaussian(res, center_yx, sigma)
   return output
 end
 
---[[
 function M.padncrop(input, lt, br)
   -- lt <= . <= br
     assert(input:nDimension()==3, 'wrong input format in function padncrop')

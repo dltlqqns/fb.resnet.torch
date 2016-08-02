@@ -99,16 +99,20 @@ image.display(im)
 
 -------------------------------------------------------------------
 --9. circlePatch
+--[[
 local radius = 5
 local patch = t.circlePatch(radius)
 print(patch)
+--]]
 
 --10. drawActivation
+--[[
 hm = t.drawActivation(43, {20,30}, 1, 'gaussian')
 image.display(hm)
 
 hm = t.drawActivation(43, {20,30}, 2, 'uniform')
 image.display(hm)
+--]]
 
 --11. drawDistActivation
 parts_hm = torch.zeros(5,2)
@@ -122,14 +126,21 @@ parts_hm[4][1] = 17
 parts_hm[4][2] = 28
 parts_hm[5][1] = 19 
 parts_hm[5][2] = 30
-hms = t.drawDistActivation(43, parts_hm, 1, 2, 'uniform')
+--parts_hm:mul(10)
+--[[
+hms = t.drawDistActivation(430, parts_hm, 5, 20, 'uniform')
 assert(hms:size(1)==9,'wrong number of channels')
 for i = 1, hms:size(1) do
   image.display(hms[i])
 end
+--]]
 
 --12. generateHeatmap
-hms = t.generateHeatmap()
+hms = t.generateHeatmap(43, parts_hm, 'uniform', 'distributed')
+print(hms:size())
+for i = 1, hms:size(1) do
+  image.display(hms[i])
+end
 
 -------------------------------------------------------------------
 -- Old version
