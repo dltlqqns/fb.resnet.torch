@@ -50,6 +50,7 @@ function DataLoader:__init(dataset, opt, split)
    self.batchSize = math.floor(opt.batchSize / self.nCrops)
    self.nPart = opt.nPart
    self.outputRes = opt.outputRes
+   self.nCh = opt.objective=='plain' and 1 or 9
 end
 
 function DataLoader:size()
@@ -61,6 +62,7 @@ function DataLoader:run()
    local size, batchSize = self.__size, self.batchSize
    local perm = torch.randperm(size)
    local nPart, outputRes = self.nPart, self.outputRes
+   local nCh = self.nCh
 
    local idx, sample = 1, nil
    local function enqueue()
@@ -70,7 +72,7 @@ function DataLoader:run()
             function(indices, nCrops)
                local sz = indices:size(1)
                local batch, imageSize
-               local target = torch.FloatTensor(sz, nPart, outputRes, outputRes)
+               local target = torch.FloatTensor(sz, nPart*nCh, outputRes, outputRes)
                local parts_hm = torch.zeros(sz, nPart, 2)
                for i, idx in ipairs(indices:totable()) do
                   local sample = _G.dataset:get(idx)

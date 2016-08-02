@@ -298,6 +298,11 @@ function M.generateHeatmap(res, parts_hm, type_shape, type_class)
   return heatmap
 end
 
+function M.squeezeHM(hm)
+  
+  return 
+end
+
 -- Old version
 --[[
 function M.drawGaussian(res, center_yx, sigma)

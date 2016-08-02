@@ -29,7 +29,9 @@ end
 -- copied and modified from pose-hg-demo util.lua
 function M.drawOutput(input, hms)
 	--assert(hms:size(1)==16,'wrong input in function drawOutput')
-
+  --TODO: fix
+  --adhoc
+  hms = hms:narrow(1,1,16)
     local colorHms = {}
     local sz = hms:size(3)
     local inp = image.scale(input,sz):mul(.3)

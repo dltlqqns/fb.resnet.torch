@@ -8,7 +8,7 @@ function M.getPred_hm(hm, type)
   assert(hm:nDimension()==4, 'wrong input format in function getPred')
   local preds_hm
   local pred_visible
-  if type=='max' then
+  if hm:size(2)==16 and type=='max' then
     local max, idx = torch.max(hm:view(hm:size(1),hm:size(2),hm:size(3)*hm:size(4)),3)
     preds_hm = torch.repeatTensor(idx,1,1,2):float()
     preds_hm[{{},{},1}]:add(-1):div(hm:size(4)):floor():add(1)
@@ -47,6 +47,12 @@ function M.getPerformance(output, sample, dataset)
   else
     error('unsupported dataset')
     iRSHO, iLHIP = 1,2
+  end
+  
+  --TODO: fix
+  --adhoc
+  if output:size(2)~=sample.parts_hm:size(2) then
+    return 0
   end
   
   -- Get prediction on the heatmap coord

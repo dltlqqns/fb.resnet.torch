@@ -74,22 +74,17 @@ function mpiiDataset:preprocess()
     parts_hm = torch.round(parts_hm) -- it may make error... TODO: fix!
 	 
     -- Generate heatmap
-    local heatmap = torch.zeros(self.nPart, self.opt.outputRes, self.opt.outputRes)
-    for iPart = 1, self.nPart do
-      if visible[iPart]~=0 then
-        heatmap[iPart] = t.drawGaussian(self.opt.outputRes, parts_hm[iPart], self.opt.sigma)
-    end
-  end
-
-  -- Return
-  return {
-    -- for training
-    input = input,
-    target = heatmap,
-    -- for evaluation
-    parts_hm = parts_hm,
-    visible = visible,
-  }
+    local heatmap = t.generateHeatmap(self.opt.outputRes, parts_hm,'uniform',self.opt.objective)
+ 
+    -- Return
+    return {
+      -- for training
+      input = input,
+      target = heatmap,
+      -- for evaluation
+      parts_hm = parts_hm,
+      visible = visible,
+    }
   end  
   
   -- Old version

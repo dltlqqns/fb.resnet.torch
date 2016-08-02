@@ -28,9 +28,11 @@ function M.create(opt, split)
       script.exec(opt, cachePath)
    end
    local imageInfo
-   if opt.small then
+   if opt.small=='true' then
+    print('small')
     imageInfo = torch.load(paths.concat(opt.gen, opt.dataset .. '_small.t7'))
    else
+    print('regular')
     imageInfo = torch.load(cachePath)
   end
 

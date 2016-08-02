@@ -169,6 +169,7 @@ local function createModel(opt)
       iChannels = 64
       print(' | ResNet-' .. depth .. ' ImageNet')
 
+      local nCh = opt.objective=='plain' and 1 or 9
       -- The ResNet ImageNet model
       model:add(Convolution(3,64,7,7,2,2,3,3))
       model:add(SBatchNorm(64))
@@ -182,12 +183,12 @@ local function createModel(opt)
       model:add(ShareGradInput(SBatchNorm(iChannels), 'last'))
       model:add(ReLU(true))
       if true then -- deconvolution
-        model:add(cudnn.SpatialFullConvolution(nFeatures,16,3,3,2,2,1,1))
-        model:add(SBatchNorm(16))
+        model:add(cudnn.SpatialFullConvolution(nFeatures,16*nCh,3,3,2,2,1,1))
+        model:add(SBatchNorm(16*nCh))
         model:add(ReLU(true))
-        model:add(Convolution(16,16,1,1,1,1,0,0))
+        model:add(Convolution(16*nCh,16*nCh,1,1,1,1,0,0))
       else
-        model:add(Convolution(nFeatures,16,1,1,1,1,0,0))
+        model:add(Convolution(nFeatures,16*nCh,1,1,1,1,0,0))
       end
       --model:add(Avg(7, 7, 1, 1))
       --model:add(nn.View(nFeatures):setNumInputDims(3))

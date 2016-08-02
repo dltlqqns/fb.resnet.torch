@@ -38,6 +38,7 @@ function M.parse(arg)
    cmd:option('-nPart',           16,     'Number of body parts')
    cmd:option('-small',           'false', 'if small dataset test')
    cmd:option('-p',           	  0.3, 		'negative sampling percentage')
+   cmd:option('-objective',       'plain', 		'heatmap type plain | distributed')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    cmd:option('-resume',          'none',        'Resume from the latest checkpoint in this directory')

@@ -55,6 +55,10 @@ function M.exec(opt, cacheFile)
       },
     }
   
+  print(info.train.centers:size())
+  print("Saving list of images to " .. cacheFile)
+  torch.save(cacheFile, info)
+  
   local info_small = {
       basedir = opt.datasplitDir,
       train = {
@@ -73,8 +77,8 @@ function M.exec(opt, cacheFile)
       },
     }
   
-  print("Saving list of images to " .. cacheFile)
-  torch.save(cacheFile, info)
+  print(info_small.train.centers:size())
+  print("Saving list of small images to ...")
   local _,_,filename_without_extension = string.find(cacheFile, "^(.*)%.[^%.]*$")
   torch.save(filename_without_extension .. '_small.t7', info_small)
   return info
