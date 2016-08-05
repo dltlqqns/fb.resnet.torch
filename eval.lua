@@ -43,7 +43,7 @@ function M.getPerformance(output, sample, dataset)
   local thres = 0.5 -- pckh
   local iRSHO, iLHIP
   if dataset=='mpii' then
-    iRSHO, iLHIP = 3,14 -- ??
+    iNECK, iHEAD = 9,10
   else
     error('unsupported dataset')
     iRSHO, iLHIP = 1,2
@@ -64,7 +64,7 @@ function M.getPerformance(output, sample, dataset)
   
   -- Get accuracy
   local dists = (preds_hm - targets_hm):pow(2):sum(3):sqrt()
-  local dists_ref = (targets_hm[{{},{iRSHO},{}}] - targets_hm[{{},{iLHIP},{}}]):pow(2):sum(3):sqrt()
+  local dists_ref = (targets_hm[{{},{iNECK},{}}] - targets_hm[{{},{iHEAD},{}}]):pow(2):sum(3):sqrt()
   dists_ref[dists_ref:eq(0)] = 1 -- prevent to divide by 0
   local normalized_dists = dists:cdiv(dists_ref:repeatTensor(1,dists:size(2),1))
   local acc = M.getAccuracy(dists, pred_invisible, invisible, thres, 'normal')
