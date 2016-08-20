@@ -1,9 +1,12 @@
 webDir = 'webpages';
 htmlPath = fullfile(webDir,['compare.html']);
 localInputImgDir = fullfile('..','..','deepcut','data','mpii-multiperson','images','test');
-localResultDirs = {fullfile('..','..','deepcut','results_deepercut'),fullfile('..','..','faster_rcnn','results')};
+localResultDirs = {fullfile('..','..','deepcut','results_deepercut'), ...
+    fullfile('..','..','convolutional-pose-machines-release','testing','result_faster_rcnn_cpm')};
+%     fullfile('..','..','faster_rcnn','results'), ...
 hostDir = 'https://dl.dropboxusercontent.com/u/14617521/webpage_images';
-repoResultDirs = {'results_deepercut','faster_rcnn'};
+% repoResultDirs = {'results_deepercut','faster_rcnn','results_faster_rcnn_cpm'};
+repoResultDirs = {'results_deepercut','results_faster_rcnn_cpm'};
 iwidth_fig = 500;
 
 % =============================================
@@ -22,7 +25,7 @@ resultlist = cell(length(localResultDirs),1);
 for iMethod = 1 : length(localResultDirs)
     resultlist{iMethod} = dir(fullfile(localResultDirs{iMethod},'*.png'));
 end
-for iImg = 1 : 80 %length(imlist)
+for iImg = 1 : 50 %length(imlist)
     fprintf(fout, '<tr>\n');
     relTestImgPath = strrep(fullfile(hostDir,'mpii_multi','test',imlist(iImg).name),'\','/');
     
