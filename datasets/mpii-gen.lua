@@ -14,6 +14,11 @@ function getImageLabels(split)
   local scales = torch.FloatTensor(root:read('scale'):all():size()):copy(root:read('scale'):all())
   local parts = torch.FloatTensor(root:read('part'):all():size()):copy(root:read('part'):all())
   local visibles = torch.FloatTensor(root:read('visible'):all():size()):copy(root:read('visible'):all())
+  --
+  local pmax = torch.max(parts,2):squeeze()
+  local pmin = torch.min(parts,2):squeeze()
+  local wh = pmax - pmin + 1
+  local bbs = torch.cat(pmin,wh)
   
   local nImg = centers:size(1)
   local maxLength = 15
@@ -29,13 +34,13 @@ function getImageLabels(split)
   end
   namesFile:close()
   
-  return imagePaths, centers, scales, parts, visibles
+  return imagePaths, centers, scales, parts, visibles, bbs
 end
 
 function M.exec(opt, cacheFile)
   
-  local trainImagePaths, trainCenters, trainScales, trainParts, trainVisibles = getImageLabels('train')
-  local valImagePaths, valCenters, valScales, valParts, valVisibles = getImageLabels('valid')
+  local trainImagePaths, trainCenters, trainScales, trainParts, trainVisibles, trainBbs = getImageLabels('train')
+  local valImagePaths, valCenters, valScales, valParts, valVisibles, valBbs = getImageLabels('valid')
     
   local info = {
       basedir = opt.datasplitDir,
@@ -45,6 +50,7 @@ function M.exec(opt, cacheFile)
         scales = trainScales,
         parts = trainParts,
         visibles = trainVisibles,
+        bbs = trainBbs,
       },
       val = {
         imagePaths = valImagePaths,
@@ -52,6 +58,7 @@ function M.exec(opt, cacheFile)
         scales = valScales,
         parts = valParts,
         visibles = valVisibles,
+        bbs = valBbs,
       },
     }
   
@@ -67,6 +74,7 @@ function M.exec(opt, cacheFile)
         scales = trainScales:narrow(1,1,1000),
         parts = trainParts:narrow(1,1,1000),
         visibles = trainVisibles:narrow(1,1,1000),
+        bbs = trainBbs:narrow(1,1,1000),
       },
       val = {
         imagePaths = valImagePaths,
@@ -74,6 +82,7 @@ function M.exec(opt, cacheFile)
         scales = valScales,
         parts = valParts,
         visibles = valVisibles,
+        bbs = valBbs:narrow(1,1,1000),
       },
     }
   
@@ -81,7 +90,7 @@ function M.exec(opt, cacheFile)
   print("Saving list of small images to ...")
   local _,_,filename_without_extension = string.find(cacheFile, "^(.*)%.[^%.]*$")
   torch.save(filename_without_extension .. '_small.t7', info_small)
-  return info
+  --return info
 end
 
 return M

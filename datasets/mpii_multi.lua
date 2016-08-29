@@ -4,14 +4,22 @@ local M = {}
 local mpiimultiDataset = torch.class('resnet.mpiimultiDataset', M)
 
 function mpiimultiDataset:__init(imageInfo, opt, split)
+  self.imageInfo = imageInfo[split]
+  self.opt = opt
+  self.split = split
+  self.nPart = 16
 end
 
 function mpiimultiDataset:get(i)
-  local path = paths.concat()
+  local path = paths.concat(self.opt.datasetDir, 'images', ffi.string(self.imageInfo.imagePaths[i]:data()))
   local input = mpiimultiDataset:loadImage(path)
+  local bb = self.imageInfo.bbs[i]
+  
   return {
     input = input,
     bb = bb,
+    --labels = labels,
+    --joints = joints,
   }
 end
 

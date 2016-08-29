@@ -1,0 +1,143 @@
+digraph G {
+	graph [bb="0,0,1521,4658"];
+	node [label="\N",
+		shape=oval
+	];
+	n1	 [height=2.5142,
+		label="Node1\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> (3) -> output]\l  (1): cudnn.SpatialConvolution(256 \
+-> 256, 3x3)\l  (2): cudnn.ReLU\l  (3): cudnn.SpatialConvolution(256 -> 18, 1x1)\l}",
+		pos="202,791",
+		tooltip="[./models/rpn.lua]:65_",
+		width=5.6242];
+	n2	 [height=1.3356,
+		label="Node2\ninput = {}\lmapindex = {Node1,Node3,Node4,Node5,Node6}\lreverseMap = {}",
+		pos="471,48",
+		tooltip="[[C]]:-1_",
+		width=5.7861];
+	n1 -> n2	 [pos="e,298.64,75.029 175.19,701.22 139.69,564.31 95.125,299.93 220,132 237.65,108.26 262.33,91.21 289.38,78.99"];
+	n3	 [height=2.5142,
+		label="Node3\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> (3) -> output]\l  (1): cudnn.SpatialConvolution(512 \
+-> 256, 3x3)\l  (2): cudnn.ReLU\l  (3): cudnn.SpatialConvolution(256 -> 18, 1x1)\l}",
+		pos="471,223",
+		tooltip="[./models/rpn.lua]:65_",
+		width=5.6242];
+	n3 -> n2	 [pos="e,471,96.173 471,132.46 471,123.55 471,114.68 471,106.24"];
+	n4	 [height=2.5142,
+		label="Node4\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> (3) -> output]\l  (1): cudnn.SpatialConvolution(512 \
+-> 256, 5x5)\l  (2): cudnn.ReLU\l  (3): cudnn.SpatialConvolution(256 -> 18, 1x1)\l}",
+		pos="895,223",
+		tooltip="[./models/rpn.lua]:65_",
+		width=5.6242];
+	n4 -> n2	 [pos="e,575.85,89.646 749.4,159.91 726.87,150.47 703.84,140.91 682,132 650.78,119.27 616.84,105.77 585.49,93.434"];
+	n5	 [height=2.5142,
+		label="Node5\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> (3) -> output]\l  (1): cudnn.SpatialConvolution(512 \
+-> 256, 7x7)\l  (2): cudnn.ReLU\l  (3): cudnn.SpatialConvolution(256 -> 18, 1x1)\l}",
+		pos="1319,223",
+		tooltip="[./models/rpn.lua]:65_",
+		width=5.6242];
+	n5 -> n2	 [pos="e,671.43,61.292 1180.3,157.07 1155.9,147.5 1130.5,138.65 1106,132 967.18,94.345 806.5,73.552 681.5,62.194"];
+	n6	 [height=12.237,
+		label="Node6\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> output]\l  (1): nn.Sequential {\l    [input -> (1) -> (\
+2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) -> (\
+2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(256 -> 512, 3x3, 2,2, 1,1)\l        |      (2): \
+nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(512 -> 512, 3x3, 1,1, \
+1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): cudnn.SpatialConvolution(256 -> 512, 1x1, \
+2,2)\l         ... -> output\l    }\l    (2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l  (2): nn.Sequential {\l    [input -> (1) \
+-> (2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) \
+-> (2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(512 -> 512, 3x3, 1,1, 1,1)\l        |      (\
+2): nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(512 -> 512, 3x3, \
+1,1, 1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): nn.Identity\l         ... -> output\l    }\l    (\
+2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l}",
+		pos="694,791",
+		tooltip="[./models/rpn.lua]:47_",
+		width=7.5351];
+	n6 -> n2	 [pos="e,320.97,81.361 519.63,453.03 488.38,414.04 452.85,378.22 413,350 355.63,309.39 302.68,369.07 259,314 208.73,250.63 213.41,198.81 \
+259,132 272.35,112.43 291.08,97.476 311.92,86.047"];
+	n6 -> n3	 [pos="e,505.91,312.62 548.06,419.58 534.14,384.27 521.02,350.97 509.69,322.2"];
+	n6 -> n4	 [pos="e,863.56,312.54 829.32,408.94 840.45,377.61 850.93,348.11 860.11,322.26"];
+	n6 -> n5	 [pos="e,1230.1,304.54 930.73,575.62 1032.1,483.77 1144.9,381.67 1222.6,311.26"];
+	n7	 [height=12.237,
+		label="Node7\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> output]\l  (1): nn.Sequential {\l    [input -> (1) -> (\
+2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) -> (\
+2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(128 -> 256, 3x3, 2,2, 1,1)\l        |      (2): \
+nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(256 -> 256, 3x3, 1,1, \
+1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): cudnn.SpatialConvolution(128 -> 256, 1x1, \
+2,2)\l         ... -> output\l    }\l    (2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l  (2): nn.Sequential {\l    [input -> (1) \
+-> (2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) \
+-> (2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(256 -> 256, 3x3, 1,1, 1,1)\l        |      (\
+2): nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(256 -> 256, 3x3, \
+1,1, 1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): nn.Identity\l         ... -> output\l    }\l    (\
+2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l}",
+		pos="448,1709",
+		tooltip="[./models/rpn.lua]:47_",
+		width=7.5351];
+	n7 -> n1	 [pos="e,225.96,881.21 339.74,1304.9 298.7,1152.1 255.44,990.97 228.58,890.99"];
+	n7 -> n6	 [pos="e,585.77,1195 556.26,1304.9 565.17,1271.7 574.2,1238.1 583.13,1204.8"];
+	n8	 [height=12.237,
+		label="Node8\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> output]\l  (1): nn.Sequential {\l    [input -> (1) -> (\
+2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) -> (\
+2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(64 -> 128, 3x3, 2,2, 1,1)\l        |      (2): \
+nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(128 -> 128, 3x3, 1,1, \
+1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): cudnn.SpatialConvolution(64 -> 128, 1x1, \
+2,2)\l         ... -> output\l    }\l    (2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l  (2): nn.Sequential {\l    [input -> (1) \
+-> (2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) \
+-> (2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(128 -> 128, 3x3, 1,1, 1,1)\l        |      (\
+2): nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(128 -> 128, 3x3, \
+1,1, 1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): nn.Identity\l         ... -> output\l    }\l    (\
+2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l}",
+		pos="448,2627",
+		tooltip="[./models/rpn.lua]:47_",
+		width=7.5351];
+	n8 -> n7	 [pos="e,448,2149.6 448,2186.4 448,2177.5 448,2168.6 448,2159.7"];
+	n9	 [height=12.237,
+		label="Node9\nreverseMap = {}\lmodule = nn.Sequential {\l  [input -> (1) -> (2) -> output]\l  (1): nn.Sequential {\l    [input -> (1) -> (\
+2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [input -> (1) -> (\
+2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(64 -> 64, 3x3, 1,1, 1,1)\l        |      (2): nn.SpatialBatchNormalization\l        |      (\
+3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(64 -> 64, 3x3, 1,1, 1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`\
+-> (2): nn.Identity\l         ... -> output\l    }\l    (2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l  (2): nn.Sequential {\l    [\
+input -> (1) -> (2) -> (3) -> output]\l    (1): nn.ConcatTable {\l      input\l        |`-> (1): nn.Sequential {\l        |      [\
+input -> (1) -> (2) -> (3) -> (4) -> (5) -> output]\l        |      (1): cudnn.SpatialConvolution(64 -> 64, 3x3, 1,1, 1,1)\l        |      (\
+2): nn.SpatialBatchNormalization\l        |      (3): cudnn.ReLU\l        |      (4): cudnn.SpatialConvolution(64 -> 64, 3x3, 1,\
+1, 1,1)\l        |      (5): nn.SpatialBatchNormalization\l        |    }\l        |`-> (2): nn.Identity\l         ... -> output\l    }\l    (\
+2): nn.CAddTable\l    (3): cudnn.ReLU\l  }\l}",
+		pos="448,3545",
+		tooltip="[./models/rpn.lua]:47_",
+		width=7.2825];
+	n9 -> n8	 [pos="e,448,3067.6 448,3104.4 448,3095.5 448,3086.6 448,3077.7"];
+	n10	 [height=1.041,
+		label="Node10\nreverseMap = {}\lmodule = nn.SpatialMaxPooling(3x3, 2,2, 1,1)",
+		pos="448,4060",
+		tooltip="[./models/rpn.lua]:47_",
+		width=5.3952];
+	n10 -> n9	 [pos="e,448,3986 448,4022.5 448,4014.7 448,4005.8 448,3996"];
+	n11	 [height=1.041,
+		label="Node11\nreverseMap = {}\lmodule = cudnn.ReLU",
+		pos="448,4172",
+		tooltip="[./models/rpn.lua]:47_",
+		width=2.8072];
+	n11 -> n10	 [pos="e,448,4097.8 448,4134.4 448,4125.9 448,4116.8 448,4108"];
+	n12	 [height=1.041,
+		label="Node12\nreverseMap = {}\lmodule = nn.SpatialBatchNormalization",
+		pos="448,4284",
+		tooltip="[./models/rpn.lua]:47_",
+		width=4.6805];
+	n12 -> n11	 [pos="e,448,4209.8 448,4246.4 448,4237.9 448,4228.8 448,4220"];
+	n13	 [height=1.041,
+		label="Node13\nreverseMap = {}\lmodule = cudnn.SpatialConvolution(3 -> 64, 7x7, 2,2, 3,3)",
+		pos="448,4396",
+		tooltip="[./models/rpn.lua]:47_",
+		width=6.706];
+	n13 -> n12	 [pos="e,448,4321.8 448,4358.4 448,4349.9 448,4340.8 448,4332"];
+	n14	 [height=1.041,
+		label="Node14\nreverseMap = {}\lmodule = nn.Identity",
+		pos="448,4508",
+		tooltip="[./models/rpn.lua]:42_",
+		width=2.6117];
+	n14 -> n13	 [pos="e,448,4433.8 448,4470.4 448,4461.9 448,4452.8 448,4444"];
+	n15	 [height=1.041,
+		label="Node15\ninput = {}\lreverseMap = {}",
+		pos="448,4620",
+		tooltip="[[C]]:-1_",
+		width=2.1497];
+	n15 -> n14	 [pos="e,448,4545.8 448,4582.4 448,4573.9 448,4564.8 448,4556"];
+}
