@@ -24,6 +24,7 @@ function M.parse(arg)
    cmd:option('-backend',    'cudnn',    'Options: cudnn | cunn')
    cmd:option('-cudnn',      'fastest',  'Options: fastest | default | deterministic')
    cmd:option('-gen',        'gen',      'Path to save generated files')
+   cmd:option('-pretrained',      'pretrained/resnet-18.t7',  'path to pretrained model')
    ------------- Data options ------------------------
    cmd:option('-nThreads',        6, 'number of data loading threads')
    ------------- Training options --------------------
@@ -47,7 +48,7 @@ function M.parse(arg)
    cmd:option('-momentum',        0.9,   'momentum')
    cmd:option('-weightDecay',     1e-4,  'weight decay')
    ---------- Model options ----------------------------------
-   cmd:option('-netType',      'preresnet-FCN', 'Options: resnet | preresnet')
+   cmd:option('-netType',      'rpn', 'Options: resnet | preresnet | preresnet-FCN')
    cmd:option('-depth',        34,       'ResNet depth: 18 | 34 | 50 | 101 | ...', 'number')
    cmd:option('-shortcutType', '',       'Options: A | B | C')
    cmd:option('-retrain',      'none',   'Path to model to retrain with')
